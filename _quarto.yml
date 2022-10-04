@@ -1,0 +1,28 @@
+project:
+  type: website
+
+website:
+  title: "NIR-Chemometrics"
+  site-url: "https://jrcuesta.quarto.pub/nir-chemometrics/"
+  description: "Blog about the use of R chemometric tools for NIR spectroscoy"
+  navbar:
+    right:
+      - about.qmd
+      - icon: github
+        href: https://github.com/jrcuesta
+      - icon: twitter
+        href: https://twitter.com/jrcuesta
+      - icon: rss
+        href: index.xml
+      - text: Ressources
+        menu: 
+          - text: R Bloggers
+            href: https://www.r-bloggers.com/
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+
+editor: visual
+

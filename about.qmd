@@ -1,0 +1,18 @@
+---
+title: "José Ramón Cuesta"
+image: profile.jpg
+about:
+  template: jolla
+  links:
+    - icon: twitter
+      text: Twitter
+      href: https://twitter.com/jrcuesta
+    - icon: linkedin
+      text: LinkedIn
+      href: https://linkedin.com/Jose Ramon Cuesta Gonzalez
+    - icon: github
+      text: Github
+      href: https://github.com/jrcuesta
+---
+
+This is the personal blog of José Ramón Cuesta about the use of chemometric tools available in R to study the Near Infrared spectroscopy and develop models with the spectra and reference values.

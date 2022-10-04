@@ -1,0 +1,4 @@
+- source: project
+  quarto-pub:
+    - id: c6241bea-d4ab-449a-8541-81ae6aab8a02
+      url: 'https://quartopub.com/sites/jrcuesta/nir-chemometrics'

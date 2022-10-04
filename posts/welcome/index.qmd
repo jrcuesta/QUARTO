@@ -1,0 +1,12 @@
+---
+title: "Welcome To My Blog"
+author: "José Ramón Cuesta"
+date: "2022-09-23"
+categories: [news]
+---
+
+This is the first post in a Quarto blog. Welcome!
+
+![](thumbnail.jpg)
+
+I am using Quarto to develop a new blog about the use of R and its chemometric tools applyed to the Near Infared spectroscopy. Hope you enjoyed the coming posts in the future.
