@@ -1,0 +1,58 @@
+---
+title: "Near Infrared Transmitance Tutorial (part 1)"
+description: "Plot the near infrared transmitance spectra of meat samples and have a look to the histograms of the main parameters using classic R code"
+author: "José Ramón Cuesta"
+date: "2022-09-26"
+categories: [NIT Tutorial]
+---
+This is the first post about how to work with Near Infrared Transmitance spectra, using the data available in the package Caret and called "tecator". Just consult the information about this data in R
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+library(caret)
+?tecator
+```
+
+When loading tecator, we have two data tables: "absorp" and "endpoints" with the spectra and reference values for the parameters "water", "fat" and "protein" for the 215 meat samples.
+
+```{r}
+data(tecator)
+ls()
+```
+
+The spectra data is in the "absorp" table which is a matrix of 215 rows (number of samples) ,and 100 columns (number of wavelengths ), so we can give names to the columns of "absorp" matrix.
+
+```{r}
+colnames(absorp) <- seq(850, 1048, by = 2)
+```
+
+We can have a look to the spectra and see its appearance:
+
+```{r}
+matplot(colnames(absorp), t(absorp), type = "l", ylab = "Absorbance", xlab = "wavelength (nm)", main = "Raw meat spectra")
+```
+
+We can see the differences in absorbance for every spectra due to the scatter, differences in the pathlength and other physical reasons. This is something we have to work on to remove it and try to see as better as possibles the chemical changes due to the differences in moisture, fat and protein, which are the parameter we want to build models.
+
+The "endpoints" table has the reference values for the parameters of interest (Moisture, Fat and Protein). It is important to have a look to the parameters distribution, so we can use for this the histogram, but first lets give names to the parameters matrix.
+
+```{r}
+colnames(endpoints)
+colnames(endpoints) <- c("Moisture", "Fat", "Protein")
+histogram(endpoints[ , 1], xlab = "Moisture content", main ="Histogram Moisture", col = "blue")
+histogram(endpoints[ , 2], xlab = "Fat content", main ="Histogram Fat", col = "grey")
+histogram(endpoints[ , 3], xlab = "Protein content", main ="Histogram Protein", col = "red")
+```
+
+We can create a data frame called "tecator" with the "endpoints" and "absorp" matrices
+
+```{r}
+tecator <- data.frame(endpoints)
+tecator$spec <- absorp
+
+```
+
+Now let´s save the dataframe to use in another post:
+
+```{r}
+save.image("C:/BLOG/Workspaces/NIT Tutorial/NIT_ws1.RData")
+```

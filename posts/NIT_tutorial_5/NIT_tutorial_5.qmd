@@ -1,0 +1,86 @@
+---
+title: "Near Infrared Transmitance Tutorial (part 5)"
+description: "This time we use the Multiple Scatter Correction algorithm ro remove the scatter"
+author: "José Ramón Cuesta"
+image: MSC_spectra.jpeg
+date: "2022-10-05"
+categories: [NIT Tutorial]
+---
+
+As always load the previous workspace:
+
+```{r}
+load("C:/BLOG/Workspaces/NIT Tutorial/NIT_ws4.RData")
+ls()
+```
+
+We need in this post these libraries
+
+```{r}
+#| message: false
+#| warning: false
+library(pls)
+library(tidymodels)
+```
+
+We use the function msc from the pls package
+
+```{r}
+absorp_msc <- msc(absorp)
+
+```
+
+This is a very simple step, and we can see the result and compare it with SNV.
+
+```{r}
+par(mfrow=c(1, 2))
+matplot(colnames(absorp_msc), t(absorp_msc), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "MSC spectra")
+matplot(colnames(absorp_snv), t(absorp_snv), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "SNV spectra")
+```
+
+as we can see they are quite similar if we don´t take into account that the SNV is centered. SNV and MSC have very different calculations:
+
+-   SNV use independently every spectrum calculating the mean and the standard deviation of the spectrum data points and use them in the calculation.
+
+-   MSC calculate the mean spectrum and use it to calculate the slope (b) and intercept (a) with a linear regression to every particular spectrum, and after that use "a" and "b" to correct that particular spectrum. A new a and b are calculated for the next spectrum using again the mean spectrum and the new spectrum in the regression.
+
+This point is a good occasion to split the data into a training ans a test set. There are several ways to do it, but let´s use tidymodels this time:
+
+```{r}
+set.seed(1234)
+tecator_split <- initial_split(tecator, prop = 3/4, strata = Protein)
+```
+
+We have selected as strata the parameter protein, because it is the first model that we will develop.
+
+```{r}
+tec_prot_train <- training(tecator_split)
+tec_prot_test <- testing(tecator_split)
+```
+
+Now we have two sets (training and test), and we will continue working with the training set, hiding the test set until we use it for the final validation. But before to hide the test set we will use it this time to explain the process to apply math treatments to the test set. Let´s apply the MSC math treatment again, but this time only to the training set:
+
+```{r}
+tec_prot_train_msc <- msc(tec_prot_train$spec)
+```
+
+The mean train spectrum is keep as reference, and now we can apply the MSC to the test set:
+
+```{r}
+tec_prot_test_msc <- predict(tec_prot_train_msc, newdata = tec_prot_test$spec)
+```
+
+Let´s compare the two sets:
+
+```{r}
+par(mfrow=c(1, 2))
+matplot(colnames(tec_prot_train_msc), t(tec_prot_train_msc), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "MSC training set", col = "blue")
+matplot(colnames(tec_prot_test_msc), t(tec_prot_test_msc), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "MSC test set", col = "green")
+```
+
+Now we can save these values in their respective dataframes:
+
+```{r}
+tec_prot_train$msc_spec <- tec_prot_train_msc
+tec_prot_test$msc_spec <- tec_prot_test_msc
+```

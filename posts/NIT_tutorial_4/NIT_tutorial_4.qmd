@@ -1,0 +1,77 @@
+---
+title: "Near Infrared Transmitance Tutorial (part 4)"
+author: "José Ramón Cuesta"
+description: "Along the coming post we will several math treatments trying to improve the correlation between the predictors and the outcomes. In this one SNV"
+date: "2022-10-03"
+image: SNV_math_treated.jpeg
+categories: [NIT Tutorial]
+---
+
+Let´s see what we have in the workspace from the previous posts:
+
+```{r}
+load("C:/BLOG/Workspaces/NIT Tutorial/NIT_ws3.RData")
+ls()
+```
+
+We can remove some objects we don´t need
+
+```{r}
+rm("cor_rawspec_fat", "cor_rawspec_moi", "cor_rawspec_prot")
+```
+
+Now we load the libraries we will use:
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+The idea now is to apply some math treatments to the raw spectra and check which one improves the correlation with the parameters of interest. Normally there are some common scatter removal algorithms that I use:
+
+-   Standard Normal Variate (SNV)
+
+-   Detrend (linear or quadratic)
+
+-   SNV + Detrend (linear or quadratic)
+
+-   Multiple Scatter Correction
+
+There are some packages in R which have these math treatment with this name or a similar one, or we can create functions to apply these algorithms to the spectra matrix.
+
+Let´s start using SNV, where we center every spectrum (subtracting the mean) and scale it (dividing by the standard deviation):
+
+```{r}
+#The algorithm is applied to the columns, so we transpose the matrix
+absorp_snv <- scale(t(absorp), center = TRUE, scale = TRUE)
+#Let´s convert the corrected matrix as usual
+absorp_snv <- t(absorp_snv)
+
+matplot(colnames(absorp_snv), t(absorp_snv), type = "l", xlab = "Wavelength (nm)", ylab = "Absorbance", main = "SNV Meat Spectra")
+```
+
+We can add the matrix treated with the SNV math treatment to the tecator dataframe
+
+```{r}
+tecator$snv_spec <- absorp_snv
+```
+
+Now we can see if the correlation is improved
+
+```{r}
+cor_snvspec_moi <- cor(tecator$Moisture, tecator$snv_spec)
+cor_snvspec_fat <- cor(tecator$Fat, tecator$snv_spec)
+cor_snvspec_prot <- cor(tecator$Protein, tecator$snv_spec)
+
+cor_snvspec <- as.data.frame(rbind(cor_snvspec_moi, cor_snvspec_fat, cor_snvspec_prot))
+
+cor_snvspec <- cor_snvspec %>% 
+  mutate(Parameter = as.factor(c("Moisture", "Fat", "Protein")))
+
+cor_snvspec %>% 
+  pivot_longer(cols = c(1:100), names_to = "Wavelength", values_to = "Correlation") %>% 
+  mutate(Wavelength = as.integer(Wavelength)) %>% 
+  ggplot(aes(x = Wavelength, y = Correlation, group = Parameter, col = Parameter)) +
+  geom_line()
+```
+
+Now, apart from the better correlation we can see an improvement in the definition of the correlations (positives and negatives), and the correlation spectra confirm what we have seen in the correlation between the parameters.
