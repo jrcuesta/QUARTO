@@ -1,0 +1,142 @@
+---
+title: "Near Infrared Transmitance Tutorial (part 6)"
+description: "The use of linear or quadratic detrend alone or combined with SNV will be treated in this post"
+image: Raw_vs_SNVDT1_SNVDT2.jpeg
+author: "José Ramón Cuesta"
+date: "2022-10-14"
+categories: [NIT Tutorial, Removing scatter, Math-treatments]
+---
+
+## Organizing data
+
+First we load the work we have done until now:
+
+```{r load_ws5}
+load("C:/BLOG/Workspaces/NIT Tutorial/NIT_ws5.RData")
+ls()
+```
+
+We can remove some files we have use for some visualization: it is important to maintain the dataframes we will use for the model development with different math treatments and the raw spectra.
+
+```{r rm_files, warning=FALSE, message=FALSE}
+rm(cor_rawspec_fat,cor_rawspec_moi, cor_rawspec_prot,
+   cor_snvspec_fat, cor_snvspec_moi, cor_snvspec_prot)
+```
+
+Resuming what we have in th tecator dataframe:
+```{r names5, warning=FALSE, message=FALSE}
+names(tecator)
+```
+
+As we can see we have the Sample ID, the parameters with the laboratory values for moisture, fat and protein, and the spectra without treatment (raw) and with the SNV treatment. At the moment we take apart the MSC math treatment , we have calculated in the previous post, and keep it for future use.
+
+## DETREND math treatment
+
+With the detrend we want to remove the linear trend caused normally by the scatter. This shift is no so obvious in the wavelength range we are using in this tutorial, but when using NIR spectra range (1100 - 2500 nm) the shift increase quite a lot and can be linear or quadratic depending on the type of sample or sample presentation. Detrend normally is combined with SNV, and this combination is in the list of some of the commercial software available for NIR or NIT instruments. The math treatments we can see in this post are:
+
+-   Detrend linear only
+
+-   SNV and linear detrend
+
+-   SNV and quadratic detrend
+
+## Detrend only (linear)
+
+We will use the {pracma} library and the function "detrend".
+
+```{r detrend_pracma, warning=FALSE, message=FALSE}
+library(pracma)
+```
+
+Let´s apply the function to the raw spectra, and see the result:
+```{r dt_spec, warning=FALSE, message=FALSE}
+#| label: fig-Raw_DTonly
+#| fig-cap: "Raw vs. Detrend only spectra"
+dt_spec <- pracma::detrend(tecator$spec)
+par(mfrow=c(1, 2))
+matplot(colnames(tecator$spec), t(tecator$spec), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "Raw spectra", col = "grey")
+matplot(colnames(dt_spec), t(dt_spec), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "Only linear detrend", col = "blue")
+```
+
+in the figure we compare the spectra without any treatment (left) with the spectra with the linear detrend, and we can see how the spectra become flatter due to the trend removal, but the result can be improved with some normalization to remove the baseline shift, so for that reason we use the detrend and SNV combined.
+
+## SNV and linear detrend
+In this case we will use another library {prospectr} , using p = 1 to remove the linear trend.
+```{r prospectr_dt1, warning=FALSE, message=FALSE}
+library(prospectr)
+snvdt1_spec <- prospectr::detrend(tecator$spec, 
+                                  wav = as.numeric(colnames(tecator$spec)),
+                                  p = 1) 
+```
+
+Now we can compare the result with the raw spectra
+
+```{r prospectr_dt1_2, warning=FALSE, message=FALSE}
+#| label: fig-Raw_SNVDT1
+#| fig-cap: "Raw vs. SNV+DT1"
+par(mfrow=c(1, 2))
+matplot(colnames(tecator$spec), t(tecator$spec), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "Raw spectra", col = "grey")
+matplot(colnames(snvdt1_spec), t(snvdt1_spec), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "SNV and Linear Detrend", col = "blue")
+```
+
+As we can see there is an improvement in the result. We can see if the change from p = 1 to p = 2 make some differences:
+
+## SNV and quadratic detrend
+
+```{r prospectr_dt1_1, warning=FALSE, message=FALSE}
+snvdt2_spec <- prospectr::detrend(tecator$spec, 
+                                  wav = as.numeric(colnames(tecator$spec)),
+                                  p = 2) 
+```
+
+Now we can compare the result with the raw spectra and linear detrend spectra.
+
+```{r prospectr_dt1_2, warning=FALSE, message=FALSE}
+#| label: fig-Raw_SNVDT2
+#| fig-cap: "Raw vs. SNV+DT1 and SNV+DT2"
+par(mfrow=c(1, 3))
+matplot(colnames(tecator$spec), t(tecator$spec), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "Raw spectra", col = "grey")
+matplot(colnames(snvdt1_spec), t(snvdt1_spec), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "SNV and Linear Detrend", col = "blue")
+matplot(colnames(snvdt2_spec), t(snvdt2_spec), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "SNV and Quadratic Detrend", col = "blue")
+```
+
+## Detrend correlations with Protein depending on type
+Let´s check the correlations for the different math treatment combinations using detrend to get some conclusions.
+```{r cor_6_1, message=FALSE, warning=FALSE}
+#| label: fig-Proteincor_dts
+#| fig-cap: "Wavelength correlation with protein for the different Detrend treatments"
+cor_prot_dt <- cor(tecator$Protein, dt_spec)
+cor_prot_snvdt1 <- cor(tecator$Protein, snvdt1_spec)
+cor_prot_snvdt2 <- cor(tecator$Protein, snvdt2_spec)
+
+cor_prot_with_dt <- as.data.frame(rbind(cor_prot_dt, cor_prot_snvdt1, cor_prot_snvdt2))
+
+library(tidyverse)
+
+cor_prot_with_dt <- cor_prot_with_dt %>% 
+  mutate(Mat_treatment = as.factor(c("DT", "SNV+DT1", "SNV+DT2")))
+
+
+cor_prot_with_dt %>% 
+  pivot_longer(cols = c(1:100), names_to = "Wavelength", values_to = "Correlation") %>% 
+  mutate(Wavelength = as.integer(Wavelength)) %>% 
+  ggplot(aes(x = Wavelength, y = Correlation, group = Mat_treatment, col = Mat_treatment)) +
+  geom_line()
+```
+
+As we can see it seems that there are an improvement in the correlation when using Quadratic Detrend combined with SNV. Anyway we wiil see during the models developments if the statistics confirm this.
+
+We can add all these three new math-treatments to the tecator dataframe for future use:
+
+```{r extend_df}
+tecator$dt_spec <- dt_spec
+tecator$snvdt1_spec <- snvdt1_spec
+tecator$sndt2_spec <- snvdt2_spec
+```
+
+Let´s save the workspace
+
+```{r save_ws6}
+save.image("C:/BLOG/Workspaces/NIT Tutorial/NIT_ws6.RData")
+```
+

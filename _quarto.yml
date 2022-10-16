@@ -14,6 +14,8 @@ website:
         href: https://twitter.com/jrcuesta
       - icon: youtube
         href: https://www.youtube.com/user/jrcuesta1
+      - icon: envelope-fill
+        href: mailto:cuesta_joseramon@yahoo.es
       - icon: rss
         href: index.xml
       - text: Ressources

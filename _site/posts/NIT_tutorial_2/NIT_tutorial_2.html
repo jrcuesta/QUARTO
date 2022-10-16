@@ -157,6 +157,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
  </a>
   </li>  
   <li class="nav-item compact">
+    <a class="nav-link" href="mailto:cuesta_joseramon@yahoo.es"><i class="bi bi-envelope-fill" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
     <a class="nav-link" href="../../index.xml"><i class="bi bi-rss" role="img">
 </i> 
  </a>
@@ -226,6 +231,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 
 
+<section id="organizing-data" class="level2">
+<h2 class="anchored" data-anchor-id="organizing-data">Organizing data</h2>
 <p>First we load the libraries we are going to use, and the “workspace” from the previous post:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
@@ -254,6 +261,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  meats  <span class="sc">%&gt;%</span> </span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rowid_to_column</span>(<span class="at">var =</span> <span class="st">"SampleID"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+</section>
+<section id="histograms-with-ggplot" class="level2">
+<h2 class="anchored" data-anchor-id="histograms-with-ggplot">Histograms with ggplot</h2>
 <p>Now we can see the histograms with ggplot</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>meats <span class="sc">%&gt;%</span> </span>
@@ -261,7 +271,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">20</span>) <span class="sc">+</span></span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"Protein Meat histogram"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="NIT_tutorial_2_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+<div id="fig-gghist_prot" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_2_files/figure-html/fig-gghist_prot-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: Protein histogram.</figcaption><p></p>
+</figure>
+</div>
 </div>
 </div>
 <p>We can do the same for moisture and fat, but with some code we can see all the histograms at the same time:</p>
@@ -279,9 +294,17 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <pre><code>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
 </div>
 <div class="cell-output-display">
-<p><img src="NIT_tutorial_2_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+<div id="fig-gghist_all" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_2_files/figure-html/fig-gghist_all-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: Parameters histograms.</figcaption><p></p>
+</figure>
 </div>
 </div>
+</div>
+</section>
+<section id="lets-see-the-raw-spectra-with-ggplot" class="level2">
+<h2 class="anchored" data-anchor-id="lets-see-the-raw-spectra-with-ggplot">Let´s see the raw spectra with ggplot</h2>
 <p>In order to see the spectra with ggplot we pivot longer meats data grouping by SampleID:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>meats_longer <span class="ot">&lt;-</span> </span>
@@ -289,22 +312,29 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="fu">c</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">101</span>),</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>               <span class="at">names_to =</span> <span class="st">"wavelength"</span>,</span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>               <span class="at">values_to =</span> <span class="st">"absorbance"</span>)  <span class="sc">%&gt;%</span>  </span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">wavelength =</span> <span class="fu">as.integer</span>(<span class="fu">str_extract</span>(wavelength, <span class="st">"[:digit:]+"</span>)))</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>meats_longer  <span class="sc">%&gt;%</span> </span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> wavelength, <span class="at">y =</span> absorbance, <span class="at">group =</span> SampleID)) <span class="sc">+</span> </span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<p><img src="NIT_tutorial_2_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
-</div>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">wavelength =</span> <span class="fu">as.integer</span>(<span class="fu">str_extract</span>(wavelength, <span class="st">"[:digit:]+"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Save the workspace for future use</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">save.image</span>(<span class="st">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws2.RData"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>meats_longer  <span class="sc">%&gt;%</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> wavelength, <span class="at">y =</span> absorbance, <span class="at">group =</span> SampleID)) <span class="sc">+</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-ggraw_spec" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_2_files/figure-html/fig-ggraw_spec-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 3: Raw spectra with ggplot.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">save.image</span>(<span class="st">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws2.RData"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

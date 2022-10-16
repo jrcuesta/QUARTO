@@ -157,6 +157,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
  </a>
   </li>  
   <li class="nav-item compact">
+    <a class="nav-link" href="mailto:cuesta_joseramon@yahoo.es"><i class="bi bi-envelope-fill" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
     <a class="nav-link" href="../../index.xml"><i class="bi bi-rss" role="img">
 </i> 
  </a>
@@ -226,6 +231,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 
 
+<section id="loading-and-organizing-data" class="level2">
+<h2 class="anchored" data-anchor-id="loading-and-organizing-data">Loading and organizing data</h2>
 <p>This is the first post about how to work with Near Infrared Transmitance spectra, using the data available in the package Caret and called “tecator”. Just consult the information about this data in R</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(caret)</span>
@@ -247,41 +254,78 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(absorp), <span class="fu">t</span>(absorp), <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">ylab =</span> <span class="st">"Absorbance"</span>, <span class="at">xlab =</span> <span class="st">"wavelength (nm)"</span>, <span class="at">main =</span> <span class="st">"Raw meat spectra"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="NIT_tutorial_1_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+<div id="fig-rawspec" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_1_files/figure-html/fig-rawspec-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: Raw spectra.</figcaption><p></p>
+</figure>
+</div>
 </div>
 </div>
 <p>We can see the differences in absorbance for every spectra due to the scatter, differences in the pathlength and other physical reasons. This is something we have to work on to remove it and try to see as better as possibles the chemical changes due to the differences in moisture, fat and protein, which are the parameter we want to build models.</p>
 <p>The “endpoints” table has the reference values for the parameters of interest (Moisture, Fat and Protein). It is important to have a look to the parameters distribution, so we can use for this the histogram, but first lets give names to the parameters matrix.</p>
+<p>As we can see we have not coloumn names</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(endpoints)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>NULL</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(endpoints) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Moisture"</span>, <span class="st">"Fat"</span>, <span class="st">"Protein"</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">histogram</span>(endpoints[ , <span class="dv">1</span>], <span class="at">xlab =</span> <span class="st">"Moisture content"</span>, <span class="at">main =</span><span class="st">"Histogram Moisture"</span>, <span class="at">col =</span> <span class="st">"blue"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<p><img src="NIT_tutorial_1_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
 </div>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">histogram</span>(endpoints[ , <span class="dv">2</span>], <span class="at">xlab =</span> <span class="st">"Fat content"</span>, <span class="at">main =</span><span class="st">"Histogram Fat"</span>, <span class="at">col =</span> <span class="st">"grey"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<p><img src="NIT_tutorial_1_files/figure-html/unnamed-chunk-5-2.png" class="img-fluid" width="672"></p>
+<p>So we can give them names:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(endpoints) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Moisture"</span>, <span class="st">"Fat"</span>, <span class="st">"Protein"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">histogram</span>(endpoints[ , <span class="dv">3</span>], <span class="at">xlab =</span> <span class="st">"Protein content"</span>, <span class="at">main =</span><span class="st">"Histogram Protein"</span>, <span class="at">col =</span> <span class="st">"red"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="looking-to-the-parameters-distribution" class="level2">
+<h2 class="anchored" data-anchor-id="looking-to-the-parameters-distribution">Looking to the parameters distribution</h2>
+<p>Let´s see the Moisture histogram</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">histogram</span>(endpoints[ , <span class="dv">1</span>], <span class="at">xlab =</span> <span class="st">"Moisture content"</span>, <span class="at">main =</span><span class="st">"Histogram Moisture"</span>, <span class="at">col =</span> <span class="st">"blue"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="NIT_tutorial_1_files/figure-html/unnamed-chunk-5-3.png" class="img-fluid" width="672"></p>
+<div id="fig-histMoi" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_1_files/figure-html/fig-histMoi-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: Moisture histogram.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Now the Fat histogram</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">histogram</span>(endpoints[ , <span class="dv">2</span>], <span class="at">xlab =</span> <span class="st">"Fat content"</span>, <span class="at">main =</span><span class="st">"Histogram Fat"</span>, <span class="at">col =</span> <span class="st">"grey"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-histFat" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_1_files/figure-html/fig-histFat-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 3: Fat histogram.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>and finally the Protein histogram</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">histogram</span>(endpoints[ , <span class="dv">3</span>], <span class="at">xlab =</span> <span class="st">"Protein content"</span>, <span class="at">main =</span><span class="st">"Histogram Protein"</span>, <span class="at">col =</span> <span class="st">"red"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-histProt" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_1_files/figure-html/fig-histProt-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 4: Protein histogram.</figcaption><p></p>
+</figure>
+</div>
 </div>
 </div>
 <p>We can create a data frame called “tecator” with the “endpoints” and “absorp” matrices</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>tecator <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(endpoints)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>tecator<span class="sc">$</span>spec <span class="ot">&lt;-</span> absorp</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>tecator <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(endpoints)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>tecator<span class="sc">$</span>spec <span class="ot">&lt;-</span> absorp</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now let´s save the dataframe to use in another post:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">save.image</span>(<span class="st">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws1.RData"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">save.image</span>(<span class="st">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws1.RData"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

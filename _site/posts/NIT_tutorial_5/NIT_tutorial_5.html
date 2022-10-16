@@ -157,6 +157,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
  </a>
   </li>  
   <li class="nav-item compact">
+    <a class="nav-link" href="mailto:cuesta_joseramon@yahoo.es"><i class="bi bi-envelope-fill" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
     <a class="nav-link" href="../../index.xml"><i class="bi bi-rss" role="img">
 </i> 
  </a>
@@ -192,6 +197,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
       </div>
                           <div class="quarto-categories">
                 <div class="quarto-category">NIT Tutorial</div>
+                <div class="quarto-category">Removing scatter</div>
+                <div class="quarto-category">Math-treatments</div>
               </div>
                   </div>
   </div>
@@ -226,6 +233,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 
 
+<section id="organizing-data" class="level2">
+<h2 class="anchored" data-anchor-id="organizing-data">Organizing data</h2>
 <p>As always load the previous workspace:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws4.RData"</span>)</span>
@@ -241,7 +250,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(pls)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidymodels)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>We use the function msc from the pls package</p>
+</section>
+<section id="multiple-scatter-correction-msc" class="level2">
+<h2 class="anchored" data-anchor-id="multiple-scatter-correction-msc">Multiple Scatter Correction (MSC)</h2>
+<p>We use the function <strong>msc</strong> from the <strong>pls</strong> package</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>absorp_msc <span class="ot">&lt;-</span> <span class="fu">msc</span>(absorp)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -251,7 +263,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(absorp_msc), <span class="fu">t</span>(absorp_msc), <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">"wavelengths (nm)"</span>, <span class="at">ylab =</span> <span class="st">"Absorbance"</span>, <span class="at">main =</span> <span class="st">"MSC spectra"</span>)</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(absorp_snv), <span class="fu">t</span>(absorp_snv), <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">"wavelengths (nm)"</span>, <span class="at">ylab =</span> <span class="st">"Absorbance"</span>, <span class="at">main =</span> <span class="st">"SNV spectra"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="NIT_tutorial_5_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+<div id="fig-snv_vs_msc" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_5_files/figure-html/fig-snv_vs_msc-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: MSC vs.&nbsp;SNV</figcaption><p></p>
+</figure>
+</div>
 </div>
 </div>
 <p>as we can see they are quite similar if we don´t take into account that the SNV is centered. SNV and MSC have very different calculations:</p>
@@ -259,6 +276,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><p>SNV use independently every spectrum calculating the mean and the standard deviation of the spectrum data points and use them in the calculation.</p></li>
 <li><p>MSC calculate the mean spectrum and use it to calculate the slope (b) and intercept (a) with a linear regression to every particular spectrum, and after that use “a” and “b” to correct that particular spectrum. A new a and b are calculated for the next spectrum using again the mean spectrum and the new spectrum in the regression.</p></li>
 </ul>
+</section>
+<section id="split-data-into-training-a-validation" class="level2">
+<h2 class="anchored" data-anchor-id="split-data-into-training-a-validation">Split data into training a validation</h2>
 <p>This point is a good occasion to split the data into a training ans a test set. There are several ways to do it, but let´s use tidymodels this time:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>)</span>
@@ -273,6 +293,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>tec_prot_train_msc <span class="ot">&lt;-</span> <span class="fu">msc</span>(tec_prot_train<span class="sc">$</span>spec)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+</section>
+<section id="apply-msc-to-the-test-set" class="level2">
+<h2 class="anchored" data-anchor-id="apply-msc-to-the-test-set">Apply MSC to the test set</h2>
 <p>The mean train spectrum is keep as reference, and now we can apply the MSC to the test set:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>tec_prot_test_msc <span class="ot">&lt;-</span> <span class="fu">predict</span>(tec_prot_train_msc, <span class="at">newdata =</span> tec_prot_test<span class="sc">$</span>spec)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -283,7 +306,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(tec_prot_train_msc), <span class="fu">t</span>(tec_prot_train_msc), <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">"wavelengths (nm)"</span>, <span class="at">ylab =</span> <span class="st">"Absorbance"</span>, <span class="at">main =</span> <span class="st">"MSC training set"</span>, <span class="at">col =</span> <span class="st">"blue"</span>)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(tec_prot_test_msc), <span class="fu">t</span>(tec_prot_test_msc), <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">"wavelengths (nm)"</span>, <span class="at">ylab =</span> <span class="st">"Absorbance"</span>, <span class="at">main =</span> <span class="st">"MSC test set"</span>, <span class="at">col =</span> <span class="st">"green"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="NIT_tutorial_5_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+<div id="fig-MSC_train_test" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_5_files/figure-html/fig-MSC_train_test-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: Training and Test sets math treated with MSC</figcaption><p></p>
+</figure>
+</div>
 </div>
 </div>
 <p>Now we can save these values in their respective dataframes:</p>
@@ -291,8 +319,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>tec_prot_train<span class="sc">$</span>msc_spec <span class="ot">&lt;-</span> tec_prot_train_msc</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>tec_prot_test<span class="sc">$</span>msc_spec <span class="ot">&lt;-</span> tec_prot_test_msc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>and save the workspace:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">save.image</span>(<span class="st">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws5.RData"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

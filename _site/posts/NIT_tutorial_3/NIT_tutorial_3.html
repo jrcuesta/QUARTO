@@ -157,6 +157,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
  </a>
   </li>  
   <li class="nav-item compact">
+    <a class="nav-link" href="mailto:cuesta_joseramon@yahoo.es"><i class="bi bi-envelope-fill" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
     <a class="nav-link" href="../../index.xml"><i class="bi bi-rss" role="img">
 </i> 
  </a>
@@ -192,6 +197,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
       </div>
                           <div class="quarto-categories">
                 <div class="quarto-category">NIT Tutorial</div>
+                <div class="quarto-category">Collinearity</div>
               </div>
                   </div>
   </div>
@@ -226,6 +232,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 
 
+<section id="organizing-data" class="level2">
+<h2 class="anchored" data-anchor-id="organizing-data">Organizing data</h2>
 <p>Let´s start loading the libraries we are going to use in this post and the workspace from the previous post.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
@@ -236,6 +244,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <pre><code>[1] "absorp"       "endpoints"    "meats"        "meats_longer" "tecator"     </code></pre>
 </div>
 </div>
+</section>
+<section id="correlation-between-the-parameters-outcomes" class="level2">
+<h2 class="anchored" data-anchor-id="correlation-between-the-parameters-outcomes">Correlation between the parameters (outcomes)</h2>
 <p>It is important to check the correlation between the outcomes variables (Moisture, Fat and Protein in this case). As we remember the outcomes are in the “endpoints” matrix.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>endpoints <span class="sc">%&gt;%</span> </span>
@@ -251,24 +262,45 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">corrplot</span>(<span class="fu">cor</span>(endpoints), <span class="at">method =</span> <span class="st">"ellipse"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="NIT_tutorial_3_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+<div id="fig-cor_params" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_3_files/figure-html/fig-cor_params-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: Inter-correlation between parameters.</figcaption><p></p>
+</figure>
+</div>
 </div>
 </div>
 <p>But to check better the trends and the possible outliers, we can use the function “pairs</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pairs</span>(endpoints)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="NIT_tutorial_3_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+<div id="fig-params_cor" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_3_files/figure-html/fig-params_cor-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: Parameters inter-correlation</figcaption><p></p>
+</figure>
+</div>
 </div>
 </div>
 <p>This way we can see at least six outliers that seems to have some bias versus the linear trend. What are the reason for these outliers? (samples different from the rest, different reference method, bias in the reference method,…). We will try to see along the tutorial.</p>
+</section>
+<section id="correlation-between-the-wavelengths-predictors" class="level2">
+<h2 class="anchored" data-anchor-id="correlation-between-the-wavelengths-predictors">Correlation between the wavelengths (predictors)</h2>
 <p>It is known that the NIR or NIT predictor variables are highly correlated, due that we are working with overtones and combination bands, so the correlation matrix in this case show high correlation between all the variables, due to we are in the third overtone and working with very broad bands.For this reason we have to apply math treatments to the spectra to remove the scatter effect and derivatives to improve the resolution of the bands. The correlation between predictors is a long matrix (100.100), so the best way to see it it is graphically. By now we see the correlation matrix of the raw spectra (without any math treatment)</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">corrplot</span>(<span class="fu">cor</span>(absorp), <span class="at">method =</span> <span class="st">"circle"</span>, <span class="at">type =</span> <span class="st">"upper"</span>, <span class="at">tl.cex =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="NIT_tutorial_3_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+<div id="fig-spec_collinearity" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_3_files/figure-html/fig-spec_collinearity-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 3: Spectra collinearity.</figcaption><p></p>
+</figure>
 </div>
 </div>
+</div>
+</section>
+<section id="correlation-between-outcomes-and-predictors" class="level2">
+<h2 class="anchored" data-anchor-id="correlation-between-outcomes-and-predictors">Correlation between outcomes and predictors</h2>
 <p>Another point is how the variation in the predictors matrix correlates with the variation of the outcomes. What we do is to see which wavelengths correlate better with a certain parameter getting three correlation spectra (one for every parameter).</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>cor_rawspec_moi <span class="ot">&lt;-</span> <span class="fu">cor</span>(tecator<span class="sc">$</span>Moisture, tecator<span class="sc">$</span>spec)</span>
@@ -285,7 +317,12 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Wavelength, <span class="at">y =</span> Correlation, <span class="at">group =</span> Parameter, <span class="at">col =</span> Parameter)) <span class="sc">+</span></span>
 <span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="NIT_tutorial_3_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+<div id="fig-cor_wavel_params" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_3_files/figure-html/fig-cor_wavel_params-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 4: Correlation absorbance vs.&nbsp;parameters.</figcaption><p></p>
+</figure>
+</div>
 </div>
 </div>
 <p>As we can see there are no wavelengths with high correlations, and if we would auto-scale every correlation spectrum, the spectrum would seem as a meat sample spectra (for moisture and protein inverted). All this is due to the scatter physical effects. So, with some math treatments to remove it the correlation will improve. Anyway, in the third overtone due to the bands overlapping, we would need a multivariate calibration with all or almost all the wavelengths.</p>
@@ -295,6 +332,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 </div>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

@@ -2,10 +2,12 @@
   {
     "listing": "/index.html",
     "items": [
-      "/posts/Near Infrared TransmitanceTutorial (part 4)/index.html",
-      "/posts/Near Infrared Transmitance Tutorial (part 3)/index.html",
-      "/posts/Near Infrared Transmitance Tutorial (part 2)/index.html",
-      "/posts/Near Infrared Transmitance Tutorial (part 1)/index.html",
+      "/posts/NIT_tutorial_6/NIR_tutotial_6.html",
+      "/posts/NIT_tutorial_5/NIT_tutorial_5.html",
+      "/posts/NIT_tutorial_4/NIT_tutorial_4.html",
+      "/posts/NIT_tutorial_3/NIT_tutorial_3.html",
+      "/posts/NIT_tutorial_2/NIT_tutorial_2.html",
+      "/posts/NIT_tutorial_1/NIT_tutorial_1.html",
       "/posts/welcome/index.html"
     ]
   }
