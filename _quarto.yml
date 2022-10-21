@@ -5,6 +5,13 @@ website:
   title: "NIR-Chemometrics"
   site-url: 'https://quartopub.com/sites/jrcuesta/nir-chemometrics'
   description: "Blog about the use of R chemometric tools for NIR spectroscopy"
+  cookie-consent:
+    type: express
+    style: headline
+    palette: dark
+  google-analytics:
+    tracking-id: "G-YCC5DZ6WSD"
+    anonymize-ip: true
   navbar:
     right:
       - about.qmd

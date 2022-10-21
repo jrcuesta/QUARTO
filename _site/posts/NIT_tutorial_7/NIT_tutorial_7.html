@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.0.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="José Ramón Cuesta">
+<meta name="dcterms.date" content="2022-10-19">
+<meta name="description" content="We can use derivatives to remove baseline offsets, alone or combined with other scatter math treatments">
+
+<title>NIR-Chemometrics - Near Infrared Transmitance Tutorial (part 7)</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/cookie-consent/cookie-consent.js"></script>
+<link href="../../site_libs/cookie-consent/cookie-consent.css" rel="stylesheet">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-YCC5DZ6WSD"></script>
+
+<script type="text/plain" cookie-consent="tracking">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YCC5DZ6WSD', { 'anonymize_ip': true});
+</script>
+
+<script type="text/javascript" charset="UTF-8">
+document.addEventListener('DOMContentLoaded', function () {
+cookieconsent.run({
+  "notice_banner_type":"headline",
+  "consent_type":"express",
+  "palette":"dark",
+  "language":"en",
+  "page_load_consent_levels":["strictly-necessary"],
+  "notice_banner_reject_button_hide":false,
+  "preferences_center_close_button_hide":false,
+  "website_name":""
+  });
+});
+</script> 
+  
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed fullcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">NIR-Chemometrics</span>
+  </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html">José Ramón Cuesta</a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/jrcuesta"><i class="bi bi-github" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/jrcuesta"><i class="bi bi-twitter" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.youtube.com/user/jrcuesta1"><i class="bi bi-youtube" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="mailto:cuesta_joseramon@yahoo.es"><i class="bi bi-envelope-fill" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"><i class="bi bi-rss" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-ressources" role="button" data-bs-toggle="dropdown" aria-expanded="false">Ressources</a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-ressources">    
+        <li>
+    <a class="dropdown-item" href="https://nir-quimiometria.blogspot.com">
+ <span class="dropdown-text">NIR-Quimiometrìa</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://www.r-bloggers.com">
+ <span class="dropdown-text">R bloggers</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Near Infrared Transmitance Tutorial (part 7)</h1>
+                  <div>
+        <div class="description">
+          We can use derivatives to remove baseline offsets, alone or combined with other scatter math treatments
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">NIT Tutorial</div>
+                <div class="quarto-category">Removing scatter</div>
+                <div class="quarto-category">Math-treatments</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>José Ramón Cuesta </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 19, 2022</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+<p>Let´s start by loading our workspace and the libraries we will use in this post:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws6.RData"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(prospectr)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mar=</span><span class="fu">c</span>(<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">2</span>)<span class="sc">+</span><span class="fl">0.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We have seen some of the most popular scatter correction methods in the previous posts, and now, in this one, we will try the derivatives (first and second) alone and combined with SNV and the quadratic detrend.</p>
+<section id="first-derivative" class="level2">
+<h2 class="anchored" data-anchor-id="first-derivative">First Derivative</h2>
+<p>We are use to see peaks and try to see at which wavelengths are the peaks and find out what type of bonds absorb at those wavelengths. Of course in the NIR bands, due to they are quite broad bands, the peaks are not so sharp as we would like to see them (like in the middle infrared), and everything became even worse as they combine with other neighbors bands forming overlapping bands even broader.</p>
+<p>The derivatives improve the resolution, increasing the separation of the overlaping bands, but the cost is the difficulty to interpret them. In the case of the first derivative, the peak maximum change to a zero-crossing. Let´s use the {prospectr} package to calculate the first derivative of the meat raw spectra: The fuction we use is gapDer, where:</p>
+<ul>
+<li><p><strong>X</strong> = the raw spectra matrix (we could use absorp or tecator$spec)</p></li>
+<li><p><strong>m</strong> = order of the derivative (for the first derivative we use 1)</p></li>
+<li><p><strong>w</strong> = gap size (we will use 1)</p></li>
+<li><p><strong>s</strong> = segment size (space on both sides of the gap to average the absorbance values)</p></li>
+<li><p><strong>delta.wav</strong> = interval between data points (2 in this case)</p></li>
+</ul>
+<p>Let´s calculate the first derivative alone and the combination of SNV and Detrend plus the first derivative:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#First derivative calculation</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>der1_spec <span class="ot">&lt;-</span> <span class="fu">gapDer</span>(absorp, <span class="at">m =</span> <span class="dv">1</span>, <span class="at">w =</span> <span class="dv">5</span>, <span class="at">s =</span> <span class="dv">1</span>, <span class="at">delta.wav =</span> <span class="dv">2</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#SNV and Detrend2 plus First Derivative</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>snvdt2der1_spec <span class="ot">&lt;-</span> <span class="fu">gapDer</span>(tecator<span class="sc">$</span>sndt2_spec, <span class="at">m =</span> <span class="dv">1</span>, <span class="at">w =</span> <span class="dv">5</span>, <span class="at">s =</span> <span class="dv">1</span>, <span class="at">delta.wav =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+
+</div>
+<p><a href="#fig-SNVDT2_1der">Figure&nbsp;1</a> compares the spectra treated with SNV plus Quadratic Detrend with the spectra of just the first derivative.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(tecator<span class="sc">$</span>sndt2_spec), <span class="fu">t</span>(tecator<span class="sc">$</span>sndt2_spec), <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">"wavelengths (nm)"</span>, <span class="at">ylab =</span> <span class="st">"Absorbance"</span>, <span class="at">main =</span> <span class="st">"SNVDT2 vs 1º Der"</span>, <span class="at">col =</span> <span class="st">"black"</span>, <span class="at">xaxt =</span> <span class="st">"n"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">new=</span><span class="cn">TRUE</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(der1_spec), <span class="fu">t</span>(der1_spec), <span class="at">type =</span> <span class="st">"l"</span>,<span class="at">lty =</span> <span class="dv">4</span>,<span class="at">axes =</span> <span class="cn">FALSE</span>, <span class="at">xlab =</span> <span class="st">" "</span>, <span class="at">ylab =</span> <span class="st">" "</span>, <span class="at">main =</span> <span class="st">" "</span>, <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">bty =</span> <span class="st">"n"</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">axis</span>(<span class="dv">4</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">axis</span>(<span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-SNVDT2_1der" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_7_files/figure-html/fig-SNVDT2_1der-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: SNVDT2 and First derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p><a href="#fig-SNVDT2_SNVDT21der">Figure&nbsp;2</a> compares the spectra treated with SNV plus Quadratic Detrend with the first derivative applied to the SNV+DT2 spectra.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(tecator<span class="sc">$</span>sndt2_spec), <span class="fu">t</span>(tecator<span class="sc">$</span>sndt2_spec), <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">"wavelengths (nm)"</span>, <span class="at">ylab =</span> <span class="st">"Absorbance"</span>, <span class="at">main =</span> <span class="st">"SNVDT2 vs SNVDT2 + 1º Der"</span>, <span class="at">col =</span> <span class="st">"black"</span>, <span class="at">xaxt =</span> <span class="st">"n"</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">new=</span><span class="cn">TRUE</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(snvdt2der1_spec), <span class="fu">t</span>(snvdt2der1_spec), <span class="at">type =</span> <span class="st">"l"</span>,<span class="at">lty =</span> <span class="dv">4</span>,<span class="at">axes =</span> <span class="cn">FALSE</span>, <span class="at">xlab =</span> <span class="st">" "</span>, <span class="at">ylab =</span> <span class="st">" "</span>, <span class="at">main =</span> <span class="st">" "</span>, <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">bty =</span> <span class="st">"n"</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">axis</span>(<span class="dv">4</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">axis</span>(<span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-SNVDT2_SNVDT21der" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_7_files/figure-html/fig-SNVDT2_SNVDT21der-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: SNVDT2 and SNVDT2 + First Derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="second-derivative" class="level2">
+<h2 class="anchored" data-anchor-id="second-derivative">Second derivative</h2>
+<p>In the calculation of the second derivative the peak maximum becomes a peak minimum, creating some kind of shoulders on the sides so it is necessary to have this on mind when interpreting the spectra. The resolution of the bands change depending of the values of “w” and “s” we choose, if the values are lower the resolution increase and at the same time the noise, so it is necessary to find a compromise between this both elements.</p>
+<p>Now let´s calculate the second derivative for the raw spectra and for the spectra treated with SNV+DT2 ( we have done this calculation in the previous post).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>der2_spec <span class="ot">&lt;-</span> <span class="fu">gapDer</span>(absorp, <span class="at">m =</span> <span class="dv">2</span>, <span class="at">w =</span> <span class="dv">5</span>, <span class="at">s =</span> <span class="dv">1</span>, <span class="at">delta.wav =</span> <span class="dv">2</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>snvdt2der2_spec <span class="ot">&lt;-</span> <span class="fu">gapDer</span>(tecator<span class="sc">$</span>sndt2_spec, <span class="at">m =</span> <span class="dv">2</span>, <span class="at">w =</span> <span class="dv">5</span>, <span class="at">s =</span> <span class="dv">1</span>, <span class="at">delta.wav =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We have to prepare some code to match the wavelengths due that the derivatives reduce the wavelenth range on both extremes depending of the values of “w” and “s”.</p>
+<div class="cell">
+
+</div>
+<p><a href="#fig-SNVDT2_2der">Figure&nbsp;3</a> compares the spectra treated with SNV plus Quadratic Detrend with the spectra of just the second derivative.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(tecator<span class="sc">$</span>sndt2_spec), <span class="fu">t</span>(tecator<span class="sc">$</span>sndt2_spec), <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">"wavelengths (nm)"</span>, <span class="at">ylab =</span> <span class="st">"Absorbance"</span>, <span class="at">main =</span> <span class="st">"SNVDT2 vs 2º Der"</span>, <span class="at">col =</span> <span class="st">"black"</span>, <span class="at">xaxt =</span> <span class="st">"n"</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">new=</span><span class="cn">TRUE</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(der2_spec), <span class="fu">t</span>(der2_spec), <span class="at">type =</span> <span class="st">"l"</span>,<span class="at">lty =</span> <span class="dv">4</span>, <span class="at">axes =</span> <span class="cn">FALSE</span>, <span class="at">xlab =</span> <span class="st">" "</span>, <span class="at">ylab =</span> <span class="st">" "</span>, <span class="at">main =</span> <span class="st">" "</span>, <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">bty =</span> <span class="st">"n"</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">axis</span>(<span class="dv">4</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">axis</span>(<span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-SNVDT2_2der" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_7_files/figure-html/fig-SNVDT2_2der-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 3: SNVDT2 and Second derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p><a href="#fig-SNVDT2_SNVDT22der">Figure&nbsp;4</a> compares the spectra treated with SNV plus Quadratic Detrend with the second derivative applied to the SNV+DT2 spectra.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(tecator<span class="sc">$</span>sndt2_spec), <span class="fu">t</span>(tecator<span class="sc">$</span>sndt2_spec), <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">"wavelengths (nm)"</span>, <span class="at">ylab =</span> <span class="st">"Absorbance"</span>, <span class="at">main =</span> <span class="st">"SNVDT2 vs SNVDT2 + 2º Der"</span>, <span class="at">col =</span> <span class="st">"black"</span>, <span class="at">xaxt =</span> <span class="st">"n"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">new=</span><span class="cn">TRUE</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(snvdt2der2_spec), <span class="fu">t</span>(snvdt2der2_spec), <span class="at">type =</span> <span class="st">"l"</span>,<span class="at">lty =</span> <span class="dv">4</span>, <span class="at">axes =</span> <span class="cn">FALSE</span>, <span class="at">xlab =</span> <span class="st">" "</span>, <span class="at">ylab =</span> <span class="st">" "</span>, <span class="at">main =</span> <span class="st">" "</span>, <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">bty =</span> <span class="st">"n"</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">axis</span>(<span class="dv">4</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">axis</span>(<span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-SNVDT2_SNVDT22der" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_7_files/figure-html/fig-SNVDT2_SNVDT22der-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 4: SNVDT2 and SNVDT2 + Second Derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="checking-the-correlation-with-the-protein-parameter-for-the-math-treatments-calculated-in-this-post" class="level2">
+<h2 class="anchored" data-anchor-id="checking-the-correlation-with-the-protein-parameter-for-the-math-treatments-calculated-in-this-post">Checking the correlation with the protein parameter for the math-treatments calculated in this post</h2>
+<p><a href="#fig-correlations1_prot">Figure&nbsp;5</a> compares correlation spectra for the four different options we have tried in this post. Visually it is difficult to decide which one can be the best, but they can help us to see where are the wavelength ranges more associated to the protein in this case.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>cor_prot_der1 <span class="ot">&lt;-</span> <span class="fu">cor</span>(tecator<span class="sc">$</span>Protein, der1_spec)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(der1_spec), <span class="fu">t</span>(cor_prot_der1), <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">"wavelengths (nm)"</span>, <span class="at">ylab =</span> <span class="st">"Absorbance"</span>, <span class="at">main =</span> <span class="st">" "</span>, <span class="at">col =</span> <span class="st">"black"</span>, <span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.0</span>, <span class="fl">1.0</span>))</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">new =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>cor_prot_snvdt2der1 <span class="ot">&lt;-</span> <span class="fu">cor</span>(tecator<span class="sc">$</span>Protein, snvdt2der1_spec)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(snvdt2der1_spec), <span class="fu">t</span>(cor_prot_snvdt2der1), <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">" "</span>, <span class="at">ylab =</span> <span class="st">" "</span>, <span class="at">main =</span> <span class="st">" "</span>, <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.0</span>, <span class="fl">1.0</span>))</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">new =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>cor_prot_der2 <span class="ot">&lt;-</span> <span class="fu">cor</span>(tecator<span class="sc">$</span>Protein, der2_spec)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(der2_spec), <span class="fu">t</span>(cor_prot_der2), <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">" "</span>, <span class="at">ylab =</span> <span class="st">" "</span>, <span class="at">main =</span> <span class="st">" "</span>, <span class="at">col =</span> <span class="st">"blue"</span>, <span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.0</span>, <span class="fl">1.0</span>))</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">new =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>cor_prot_snvdt2der2 <span class="ot">&lt;-</span> <span class="fu">cor</span>(tecator<span class="sc">$</span>Protein, snvdt2der2_spec)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(<span class="fu">colnames</span>(snvdt2der2_spec), <span class="fu">t</span>(cor_prot_snvdt2der2), <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">xlab =</span> <span class="st">" "</span>, <span class="at">ylab =</span> <span class="st">" "</span>, <span class="at">main =</span> <span class="st">" "</span>, <span class="at">col =</span> <span class="st">"green"</span>, <span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.0</span>, <span class="fl">1.0</span>))</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">"topleft"</span>, <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">"1st Der"</span>, <span class="st">"SNVDT2+1Der"</span>, <span class="st">"2nd Der"</span>, <span class="st">"SNVDT2+2Der"</span> ),</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>       <span class="at">lty =</span> <span class="dv">1</span>, <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"black"</span>, <span class="st">"red"</span>, <span class="st">"blue"</span>, <span class="st">"green"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-correlations1_prot" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="NIT_tutorial_7_files/figure-html/fig-correlations1_prot-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 5: SNVDT2 and SNVDT2 + Second Derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout-tip callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Let´s do it with ggplot2
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>We have already load tidyverse library at the beginning</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>cor_prot_with_der <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">rbind</span>(cor_prot_der1, cor_prot_snvdt2der1,                                                 cor_prot_der2, cor_prot_snvdt2der2))</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#replace all NA values with zero</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>cor_prot_with_der <span class="ot">&lt;-</span> cor_prot_with_der <span class="sc">%&gt;%</span> </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">replace</span>(<span class="fu">is.na</span>(.), <span class="dv">0</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>cor_prot_with_dt <span class="ot">&lt;-</span> cor_prot_with_der <span class="sc">%&gt;%</span> </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Mat_treatment =</span> <span class="fu">as.factor</span>(<span class="fu">c</span>(<span class="st">"1ª Der"</span>, <span class="st">"SNVDT2 + 1ª Der"</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>                                     <span class="st">"2ª Der"</span>, <span class="st">"SNVDT2 + 2ª Der"</span>)))</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>cor_prot_with_dt <span class="sc">%&gt;%</span> </span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>), <span class="at">names_to =</span> <span class="st">"Wavelength"</span>, <span class="at">values_to =</span> <span class="st">"Correlation"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Wavelength =</span> <span class="fu">as.integer</span>(Wavelength)) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Wavelength, <span class="at">y =</span> Correlation, <span class="at">group =</span> Mat_treatment, <span class="at">col =</span> Mat_treatment)) <span class="sc">+</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">size =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="NIT_tutorial_7_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>Let´s see in a diagram what we have seen until this post</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<p>
+</p><pre class="mermaid" data-tooltip-selector="#mermaid-tooltip-1">flowchart LR
+  A[Raw Spectra] --&gt; B(SNV)
+  A --&gt; C(Detrend only)
+  A --&gt; D[SNV &amp; linear Detrend]
+  A --&gt; E[SNV &amp; Quadratic Detrend]
+  D --&gt; F[First Derivative]
+  D --&gt; G[Second Derivative]
+  A --&gt; H[MSC]
+  A --&gt; I[First Derivative]
+  A --&gt; J[Second Derivative]
+  
+</pre>
+<div id="mermaid-tooltip-1" class="mermaidTooltip">
+
+</div>
+<p></p>
+</div>
+</div>
+</div>
+<p>We have several options now to develop models and see which one gives the better statistics, of course there are more math treatments we can try but we stop in this tutorial with the derivatives and in the next ones we will check the different options to find outliers.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+<script src="https://giscus.app/client.js" data-repo="jrcuesta/QUARTO" data-repo-id="R_kgDOIIJdrw" data-category="General" data-category-id="DIC_kwDOIIJdr84CRyRo" data-mapping="title" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="light" data-lang="en" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+      <div class="nav-footer-center"><div class="cookie-consent-footer"><a href="#" id="open_preferences_center">Cookie Preferences</a></div></div>
+  </div>
+</footer>
+
+
+
+</body></html>

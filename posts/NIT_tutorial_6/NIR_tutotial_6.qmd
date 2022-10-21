@@ -24,6 +24,7 @@ rm(cor_rawspec_fat,cor_rawspec_moi, cor_rawspec_prot,
 ```
 
 Resuming what we have in th tecator dataframe:
+
 ```{r names5, warning=FALSE, message=FALSE}
 names(tecator)
 ```
@@ -49,6 +50,7 @@ library(pracma)
 ```
 
 Let´s apply the function to the raw spectra, and see the result:
+
 ```{r dt_spec, warning=FALSE, message=FALSE}
 #| label: fig-Raw_DTonly
 #| fig-cap: "Raw vs. Detrend only spectra"
@@ -61,7 +63,9 @@ matplot(colnames(dt_spec), t(dt_spec), type = "l", xlab = "wavelengths (nm)", yl
 in the figure we compare the spectra without any treatment (left) with the spectra with the linear detrend, and we can see how the spectra become flatter due to the trend removal, but the result can be improved with some normalization to remove the baseline shift, so for that reason we use the detrend and SNV combined.
 
 ## SNV and linear detrend
+
 In this case we will use another library {prospectr} , using p = 1 to remove the linear trend.
+
 ```{r prospectr_dt1, warning=FALSE, message=FALSE}
 library(prospectr)
 snvdt1_spec <- prospectr::detrend(tecator$spec, 
@@ -101,7 +105,9 @@ matplot(colnames(snvdt2_spec), t(snvdt2_spec), type = "l", xlab = "wavelengths (
 ```
 
 ## Detrend correlations with Protein depending on type
+
 Let´s check the correlations for the different math treatment combinations using detrend to get some conclusions.
+
 ```{r cor_6_1, message=FALSE, warning=FALSE}
 #| label: fig-Proteincor_dts
 #| fig-cap: "Wavelength correlation with protein for the different Detrend treatments"
@@ -139,4 +145,3 @@ Let´s save the workspace
 ```{r save_ws6}
 save.image("C:/BLOG/Workspaces/NIT Tutorial/NIT_ws6.RData")
 ```
-

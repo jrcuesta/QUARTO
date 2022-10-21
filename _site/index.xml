@@ -10,7 +10,225 @@
 <atom:link href="https://quartopub.com/sites/jrcuesta/nir-chemometrics/index.xml" rel="self" type="application/rss+xml"/>
 <description>Blog about the use of R chemometric tools for NIR spectroscopy</description>
 <generator>quarto-1.0.36</generator>
-<lastBuildDate>Thu, 13 Oct 2022 22:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 18 Oct 2022 22:00:00 GMT</lastBuildDate>
+<item>
+  <title>Near Infrared Transmitance Tutorial (part 7)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>Let´s start by loading our workspace and the libraries we will use in this post:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws6.RData"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(tidyverse)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;">library</span>(prospectr)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">mar=</span><span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">5</span>,<span class="dv" style="color: #AD0000;">4</span>,<span class="dv" style="color: #AD0000;">4</span>,<span class="dv" style="color: #AD0000;">2</span>)<span class="sc" style="color: #5E5E5E;">+</span><span class="fl" style="color: #AD0000;">0.1</span>)</span></code></pre></div>
+</div>
+<p>We have seen some of the most popular scatter correction methods in the previous posts, and now, in this one, we will try the derivatives (first and second) alone and combined with SNV and the quadratic detrend.</p>
+<section id="first-derivative" class="level2">
+<h2 class="anchored" data-anchor-id="first-derivative">First Derivative</h2>
+<p>We are use to see peaks and try to see at which wavelengths are the peaks and find out what type of bonds absorb at those wavelengths. Of course in the NIR bands, due to they are quite broad bands, the peaks are not so sharp as we would like to see them (like in the middle infrared), and everything became even worse as they combine with other neighbors bands forming overlapping bands even broader.</p>
+<p>The derivatives improve the resolution, increasing the separation of the overlaping bands, but the cost is the difficulty to interpret them. In the case of the first derivative, the peak maximum change to a zero-crossing. Let´s use the {prospectr} package to calculate the first derivative of the meat raw spectra: The fuction we use is gapDer, where:</p>
+<ul>
+<li><p><strong>X</strong> = the raw spectra matrix (we could use absorp or tecator$spec)</p></li>
+<li><p><strong>m</strong> = order of the derivative (for the first derivative we use 1)</p></li>
+<li><p><strong>w</strong> = gap size (we will use 1)</p></li>
+<li><p><strong>s</strong> = segment size (space on both sides of the gap to average the absorbance values)</p></li>
+<li><p><strong>delta.wav</strong> = interval between data points (2 in this case)</p></li>
+</ul>
+<p>Let´s calculate the first derivative alone and the combination of SNV and Detrend plus the first derivative:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;">#First derivative calculation</span></span>
+<span id="cb2-2">der1_spec <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">gapDer</span>(absorp, <span class="at" style="color: #657422;">m =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">w =</span> <span class="dv" style="color: #AD0000;">5</span>, <span class="at" style="color: #657422;">s =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">delta.wav =</span> <span class="dv" style="color: #AD0000;">2</span>)</span>
+<span id="cb2-3"><span class="co" style="color: #5E5E5E;">#SNV and Detrend2 plus First Derivative</span></span>
+<span id="cb2-4">snvdt2der1_spec <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">gapDer</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec, <span class="at" style="color: #657422;">m =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">w =</span> <span class="dv" style="color: #AD0000;">5</span>, <span class="at" style="color: #657422;">s =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">delta.wav =</span> <span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
+</div>
+<div class="cell">
+
+</div>
+<p>Figure&nbsp;1 compares the spectra treated with SNV plus Quadratic Detrend with the spectra of just the first derivative.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="fu" style="color: #4758AB;">t</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"SNVDT2 vs 1º Der"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"black"</span>, <span class="at" style="color: #657422;">xaxt =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb3-2"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new=</span><span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb3-3"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(der1_spec), <span class="fu" style="color: #4758AB;">t</span>(der1_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>,<span class="at" style="color: #657422;">lty =</span> <span class="dv" style="color: #AD0000;">4</span>,<span class="at" style="color: #657422;">axes =</span> <span class="cn" style="color: #8f5902;">FALSE</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>, <span class="at" style="color: #657422;">bty =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb3-4"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">4</span>)</span>
+<span id="cb3-5"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-SNVDT2_1der" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-SNVDT2_1der-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: SNVDT2 and First derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Figure&nbsp;2 compares the spectra treated with SNV plus Quadratic Detrend with the first derivative applied to the SNV+DT2 spectra.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="fu" style="color: #4758AB;">t</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"SNVDT2 vs SNVDT2 + 1º Der"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"black"</span>, <span class="at" style="color: #657422;">xaxt =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb4-2"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new=</span><span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb4-3"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(snvdt2der1_spec), <span class="fu" style="color: #4758AB;">t</span>(snvdt2der1_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>,<span class="at" style="color: #657422;">lty =</span> <span class="dv" style="color: #AD0000;">4</span>,<span class="at" style="color: #657422;">axes =</span> <span class="cn" style="color: #8f5902;">FALSE</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>, <span class="at" style="color: #657422;">bty =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb4-4"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">4</span>)</span>
+<span id="cb4-5"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-SNVDT2_SNVDT21der" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-SNVDT2_SNVDT21der-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: SNVDT2 and SNVDT2 + First Derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="second-derivative" class="level2">
+<h2 class="anchored" data-anchor-id="second-derivative">Second derivative</h2>
+<p>In the calculation of the second derivative the peak maximum becomes a peak minimum, creating some kind of shoulders on the sides so it is necessary to have this on mind when interpreting the spectra. The resolution of the bands change depending of the values of “w” and “s” we choose, if the values are lower the resolution increase and at the same time the noise, so it is necessary to find a compromise between this both elements.</p>
+<p>Now let´s calculate the second derivative for the raw spectra and for the spectra treated with SNV+DT2 ( we have done this calculation in the previous post).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">der2_spec <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">gapDer</span>(absorp, <span class="at" style="color: #657422;">m =</span> <span class="dv" style="color: #AD0000;">2</span>, <span class="at" style="color: #657422;">w =</span> <span class="dv" style="color: #AD0000;">5</span>, <span class="at" style="color: #657422;">s =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">delta.wav =</span> <span class="dv" style="color: #AD0000;">2</span>)</span>
+<span id="cb5-2">snvdt2der2_spec <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">gapDer</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec, <span class="at" style="color: #657422;">m =</span> <span class="dv" style="color: #AD0000;">2</span>, <span class="at" style="color: #657422;">w =</span> <span class="dv" style="color: #AD0000;">5</span>, <span class="at" style="color: #657422;">s =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">delta.wav =</span> <span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
+</div>
+<p>We have to prepare some code to match the wavelengths due that the derivatives reduce the wavelenth range on both extremes depending of the values of “w” and “s”.</p>
+<div class="cell">
+
+</div>
+<p>Figure&nbsp;3 compares the spectra treated with SNV plus Quadratic Detrend with the spectra of just the second derivative.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="fu" style="color: #4758AB;">t</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"SNVDT2 vs 2º Der"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"black"</span>, <span class="at" style="color: #657422;">xaxt =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb6-2"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new=</span><span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb6-3"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(der2_spec), <span class="fu" style="color: #4758AB;">t</span>(der2_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>,<span class="at" style="color: #657422;">lty =</span> <span class="dv" style="color: #AD0000;">4</span>, <span class="at" style="color: #657422;">axes =</span> <span class="cn" style="color: #8f5902;">FALSE</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>, <span class="at" style="color: #657422;">bty =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb6-4"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">4</span>)</span>
+<span id="cb6-5"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-SNVDT2_2der" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-SNVDT2_2der-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 3: SNVDT2 and Second derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Figure&nbsp;4 compares the spectra treated with SNV plus Quadratic Detrend with the second derivative applied to the SNV+DT2 spectra.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="fu" style="color: #4758AB;">t</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"SNVDT2 vs SNVDT2 + 2º Der"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"black"</span>, <span class="at" style="color: #657422;">xaxt =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb7-2"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new=</span><span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb7-3"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(snvdt2der2_spec), <span class="fu" style="color: #4758AB;">t</span>(snvdt2der2_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>,<span class="at" style="color: #657422;">lty =</span> <span class="dv" style="color: #AD0000;">4</span>, <span class="at" style="color: #657422;">axes =</span> <span class="cn" style="color: #8f5902;">FALSE</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>, <span class="at" style="color: #657422;">bty =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb7-4"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">4</span>)</span>
+<span id="cb7-5"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-SNVDT2_SNVDT22der" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-SNVDT2_SNVDT22der-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 4: SNVDT2 and SNVDT2 + Second Derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="checking-the-correlation-with-the-protein-parameter-for-the-math-treatments-calculated-in-this-post" class="level2">
+<h2 class="anchored" data-anchor-id="checking-the-correlation-with-the-protein-parameter-for-the-math-treatments-calculated-in-this-post">Checking the correlation with the protein parameter for the math-treatments calculated in this post</h2>
+<p>Figure&nbsp;5 compares correlation spectra for the four different options we have tried in this post. Visually it is difficult to decide which one can be the best, but they can help us to see where are the wavelength ranges more associated to the protein in this case.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">cor_prot_der1 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, der1_spec)</span>
+<span id="cb8-2"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(der1_spec), <span class="fu" style="color: #4758AB;">t</span>(cor_prot_der1), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"black"</span>, <span class="at" style="color: #657422;">ylim =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="sc" style="color: #5E5E5E;">-</span><span class="fl" style="color: #AD0000;">1.0</span>, <span class="fl" style="color: #AD0000;">1.0</span>))</span>
+<span id="cb8-3"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new =</span> <span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb8-4">cor_prot_snvdt2der1 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, snvdt2der1_spec)</span>
+<span id="cb8-5"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(snvdt2der1_spec), <span class="fu" style="color: #4758AB;">t</span>(cor_prot_snvdt2der1), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>, <span class="at" style="color: #657422;">ylim =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="sc" style="color: #5E5E5E;">-</span><span class="fl" style="color: #AD0000;">1.0</span>, <span class="fl" style="color: #AD0000;">1.0</span>))</span>
+<span id="cb8-6"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new =</span> <span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb8-7">cor_prot_der2 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, der2_spec)</span>
+<span id="cb8-8"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(der2_spec), <span class="fu" style="color: #4758AB;">t</span>(cor_prot_der2), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"blue"</span>, <span class="at" style="color: #657422;">ylim =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="sc" style="color: #5E5E5E;">-</span><span class="fl" style="color: #AD0000;">1.0</span>, <span class="fl" style="color: #AD0000;">1.0</span>))</span>
+<span id="cb8-9"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new =</span> <span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb8-10">cor_prot_snvdt2der2 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, snvdt2der2_spec)</span>
+<span id="cb8-11"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(snvdt2der2_spec), <span class="fu" style="color: #4758AB;">t</span>(cor_prot_snvdt2der2), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"green"</span>, <span class="at" style="color: #657422;">ylim =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="sc" style="color: #5E5E5E;">-</span><span class="fl" style="color: #AD0000;">1.0</span>, <span class="fl" style="color: #AD0000;">1.0</span>))</span>
+<span id="cb8-12"></span>
+<span id="cb8-13"></span>
+<span id="cb8-14"><span class="fu" style="color: #4758AB;">legend</span>(<span class="st" style="color: #20794D;">"topleft"</span>, <span class="at" style="color: #657422;">legend =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"1st Der"</span>, <span class="st" style="color: #20794D;">"SNVDT2+1Der"</span>, <span class="st" style="color: #20794D;">"2nd Der"</span>, <span class="st" style="color: #20794D;">"SNVDT2+2Der"</span> ),</span>
+<span id="cb8-15">       <span class="at" style="color: #657422;">lty =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">col =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"black"</span>, <span class="st" style="color: #20794D;">"red"</span>, <span class="st" style="color: #20794D;">"blue"</span>, <span class="st" style="color: #20794D;">"green"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-correlations1_prot" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-correlations1_prot-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 5: SNVDT2 and SNVDT2 + Second Derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout-tip callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Let´s do it with ggplot2
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>We have already load tidyverse library at the beginning</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">cor_prot_with_der <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">as.data.frame</span>(<span class="fu" style="color: #4758AB;">rbind</span>(cor_prot_der1, cor_prot_snvdt2der1,                                                 cor_prot_der2, cor_prot_snvdt2der2))</span>
+<span id="cb9-2"></span>
+<span id="cb9-3"><span class="co" style="color: #5E5E5E;">#replace all NA values with zero</span></span>
+<span id="cb9-4">cor_prot_with_der <span class="ot" style="color: #003B4F;">&lt;-</span> cor_prot_with_der <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb9-5">                        <span class="fu" style="color: #4758AB;">replace</span>(<span class="fu" style="color: #4758AB;">is.na</span>(.), <span class="dv" style="color: #AD0000;">0</span>)</span>
+<span id="cb9-6"></span>
+<span id="cb9-7">cor_prot_with_dt <span class="ot" style="color: #003B4F;">&lt;-</span> cor_prot_with_der <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb9-8">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">Mat_treatment =</span> <span class="fu" style="color: #4758AB;">as.factor</span>(<span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"1ª Der"</span>, <span class="st" style="color: #20794D;">"SNVDT2 + 1ª Der"</span>,</span>
+<span id="cb9-9">                                     <span class="st" style="color: #20794D;">"2ª Der"</span>, <span class="st" style="color: #20794D;">"SNVDT2 + 2ª Der"</span>)))</span>
+<span id="cb9-10"></span>
+<span id="cb9-11"></span>
+<span id="cb9-12">cor_prot_with_dt <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb9-13">  <span class="fu" style="color: #4758AB;">pivot_longer</span>(<span class="at" style="color: #657422;">cols =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">100</span>), <span class="at" style="color: #657422;">names_to =</span> <span class="st" style="color: #20794D;">"Wavelength"</span>, <span class="at" style="color: #657422;">values_to =</span> <span class="st" style="color: #20794D;">"Correlation"</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb9-14">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">Wavelength =</span> <span class="fu" style="color: #4758AB;">as.integer</span>(Wavelength)) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb9-15">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> Wavelength, <span class="at" style="color: #657422;">y =</span> Correlation, <span class="at" style="color: #657422;">group =</span> Mat_treatment, <span class="at" style="color: #657422;">col =</span> Mat_treatment)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb9-16">  <span class="fu" style="color: #4758AB;">geom_line</span>(<span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>Let´s see in a diagram what we have seen until this post</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<p>
+</p><pre class="mermaid" data-tooltip-selector="#mermaid-tooltip-1">flowchart LR
+  A[Raw Spectra] --&gt; B(SNV)
+  A --&gt; C(Detrend only)
+  A --&gt; D[SNV &amp; linear Detrend]
+  A --&gt; E[SNV &amp; Quadratic Detrend]
+  D --&gt; F[First Derivative]
+  D --&gt; G[Second Derivative]
+  A --&gt; H[MSC]
+  A --&gt; I[First Derivative]
+  A --&gt; J[Second Derivative]
+  
+</pre>
+<div id="mermaid-tooltip-1" class="mermaidTooltip">
+
+</div>
+<p></p>
+</div>
+</div>
+</div>
+<p>We have several options now to develop models and see which one gives the better statistics, of course there are more math treatments we can try but we stop in this tutorial with the derivatives and in the next ones we will check the different options to find outliers.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>NIT Tutorial</category>
+  <category>Removing scatter</category>
+  <category>Math-treatments</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7.html</guid>
+  <pubDate>Tue, 18 Oct 2022 22:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/cor_spectra_der.jpeg" medium="image" type="image/jpeg"/>
+</item>
 <item>
   <title>Near Infrared Transmitance Tutorial (part 6)</title>
   <dc:creator>José Ramón Cuesta</dc:creator>
