@@ -3,7 +3,7 @@ title: "Near Infrared Transmitance Tutorial (part 1)"
 description: "Plot the near infrared transmitance spectra of meat samples and have a look to the histograms of the main parameters using classic R code"
 author: "José Ramón Cuesta"
 date: "2022-09-26"
-categories: [NIT Tutorial]
+categories: [R, NIT Tutorial]
 ---
 
 ## Loading and organizing data
@@ -12,7 +12,6 @@ This is the first post about how to work with Near Infrared Transmitance spectra
 
 ```{r loadlib, echo=TRUE, message=FALSE, warning=FALSE}
 library(caret)
-?tecator
 ```
 
 When loading tecator, we have two data tables: "absorp" and "endpoints" with the spectra and reference values for the parameters "water", "fat" and "protein" for the 215 meat samples.
