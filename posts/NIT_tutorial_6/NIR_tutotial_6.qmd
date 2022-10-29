@@ -4,7 +4,7 @@ description: "The use of linear or quadratic detrend alone or combined with SNV 
 image: Raw_vs_SNVDT1_SNVDT2.jpeg
 author: "José Ramón Cuesta"
 date: "2022-10-14"
-categories: [NIT Tutorial, Removing scatter, Math-treatments]
+categories: [R, NIT Tutorial, Removing scatter, Math-treatments]
 ---
 
 ## Organizing data

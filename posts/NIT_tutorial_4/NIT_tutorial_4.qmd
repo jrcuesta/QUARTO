@@ -4,7 +4,7 @@ author: "José Ramón Cuesta"
 description: "Along the coming post we will several math treatments trying to improve the correlation between the predictors and the outcomes. In this one SNV"
 date: "2022-10-03"
 image: SNV_math_treated.jpeg
-categories: [NIT Tutorial, Removing scatter, Math-treatments]
+categories: [R, NIT Tutorial, Removing scatter, Math-treatments]
 ---
 
 ## Organizing data
@@ -93,5 +93,3 @@ As always save the workspace for future use:
 ```{r save_ws4}
 save.image("C:/BLOG/Workspaces/NIT Tutorial/NIT_ws4.RData")
 ```
-
-

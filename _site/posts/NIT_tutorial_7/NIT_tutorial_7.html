@@ -226,6 +226,7 @@ cookieconsent.run({
         </div>
       </div>
                           <div class="quarto-categories">
+                <div class="quarto-category">R</div>
                 <div class="quarto-category">NIT Tutorial</div>
                 <div class="quarto-category">Removing scatter</div>
                 <div class="quarto-category">Math-treatments</div>
@@ -460,6 +461,17 @@ Let´s do it with ggplot2
 </div>
 </div>
 <p>We have several options now to develop models and see which one gives the better statistics, of course there are more math treatments we can try but we stop in this tutorial with the derivatives and in the next ones we will check the different options to find outliers.</p>
+<p>Finally we add the new math treatments to the tecator database to use it in the coming posts:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>tecator<span class="sc">$</span>der1_spec <span class="ot">&lt;-</span> der1_spec</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>tecator<span class="sc">$</span>der2_spec <span class="ot">&lt;-</span> der2_spec</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>tecator<span class="sc">$</span>snvdt2der1_spec <span class="ot">&lt;-</span> snvdt2der1_spec</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>tecator<span class="sc">$</span>snvdt2der2_spec <span class="ot">&lt;-</span> snvdt2der2_spec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>and save the dataframe for future use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">save.image</span>(<span class="st">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws7.RData"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 
 
 </section>

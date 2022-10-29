@@ -4,7 +4,7 @@ description: "This time we use the Multiple Scatter Correction algorithm ro remo
 author: "José Ramón Cuesta"
 image: MSC_spectra.jpeg
 date: "2022-10-05"
-categories: [NIT Tutorial, Removing scatter, Math-treatments]
+categories: [R, NIT Tutorial, Removing scatter, Math-treatments]
 ---
 
 ## Organizing data

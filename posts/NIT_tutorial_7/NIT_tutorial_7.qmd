@@ -5,7 +5,7 @@ image: cor_spectra_der.jpeg
 author: "José Ramón Cuesta"
 draft: FALSE
 date: "2022-10-19"
-categories: [NIT Tutorial, Removing scatter, Math-treatments]
+categories: [R, NIT Tutorial, Removing scatter, Math-treatments]
 ---
 
 Let´s start by loading our workspace and the libraries we will use in this post:
@@ -209,3 +209,17 @@ flowchart LR
   
 ```
 We have several options now to develop models and see which one gives the better statistics, of course there are more math treatments we can try but we stop in this tutorial with the derivatives and in the next ones we will check the different options to find outliers.
+
+Finally we add the new math treatments to the tecator database to use it in the coming posts:
+```{r}
+tecator$der1_spec <- der1_spec
+tecator$der2_spec <- der2_spec
+tecator$snvdt2der1_spec <- snvdt2der1_spec
+tecator$snvdt2der2_spec <- snvdt2der2_spec
+```
+
+and save the dataframe for future use:
+```{r}
+save.image("C:/BLOG/Workspaces/NIT Tutorial/NIT_ws7.RData")
+```
+

@@ -5,7 +5,7 @@ author: "José Ramón Cuesta"
 image: raw_meat_spectra.jpeg
 draft: false
 date: "2022-09-28"
-categories: [NIT Tutorial]
+categories: [R, NIT Tutorial]
 ---
 
 ## Organizing data
@@ -31,7 +31,6 @@ The tecator data is available as well in the library "modeldata", but with the n
 
 ```{r data_meats, message=FALSE, warning=FALSE}
 data(meats)
-?meats
 ```
 
 The first 100 columns are the wavelengths are the datapoints and the last 3 the parameters, so we can rename de column names, and add an extra column called "SampleID" (same as row number).

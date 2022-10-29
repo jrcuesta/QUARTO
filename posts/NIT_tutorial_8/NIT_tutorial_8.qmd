@@ -1,0 +1,179 @@
+---
+title: "PCA - NIT tutorial (part 8)"
+author: "José Ramón Cuesta"
+description: "Running Principal Components Analysis on the spectra matrix"
+image: biplot23.jpeg
+date: "2022-10-21"
+categories: [R, NIT Tutorial, PCA]
+---
+
+Let´s load the workspace and the libraries we are going to use:
+
+```{r}
+#| warning: false
+#| message: false
+load("C:/BLOG/Workspaces/NIT Tutorial/NIT_ws7.RData")
+library(photobiology)
+```
+
+## Principal Component Analysis
+
+We use the spectra matrix "X" and we want to decompose it into a matrix product:
+
+## **X = T.P^t^ + E**
+
+where:
+
+-   **X** is the spectra matrix (with the math treatment we have choose)
+
+-   **T** is a score matrix,
+
+-   **P** is the terms matrix and
+
+-   **E** is the error matrix.
+
+There are several ways to calculate the PCA with R, but let´s start with "prcomp". For the calculation we will use the tecator spectra with the SNV+DT2 that we have seen on part 6.
+
+```{r}
+#| warning: false
+#| message: false
+tecator_pc <- prcomp(tecator$snvdt2der2_spec)
+summary(tecator_pc)[[6]][,1:10]
+```
+
+In the summary we can see the quantity of variance explained by every term (or principal component). We can calculate the variance in percentage and plot it.
+
+```{r}
+
+percentVariance <- round(tecator_pc$sdev^2/sum(tecator_pc$sdev^2)*100, 2)
+
+```
+
+@fig-expvar_pc *shows how the firsts PCs explain almost all the variance, so we can discard the rest and retain only the important ones.*
+
+```{r}
+#| warning: false
+#| message: false
+#| label: fig-expvar_pc
+#| fig-cap: Percentage Variance explained by PC
+plot(percentVariance[1:10], type = "b", xlab = "PC number", ylab= "% Variance explained")
+```
+
+@fig-expvar_pc *The plot of the cumulative variance can give us a better idea about the number of principal components to keep:*
+
+```{r}
+#| label: fig-cumvar_pc
+#| fig-cap: Cumulative variance as we add a new PC
+plot(cumsum(tecator_pc$sdev^2 / sum(tecator_pc$sdev^2)*100)[1:10], type="b", xlab = "PC number", ylab = "Cummulative Variance %")
+```
+
+As we see, after 6 principal components the line becomes flat and almost 100% of the variance is explained (exactly 99.75 %). We see how the first one explain almost 87% of the variance, and the two first terms explain together more than 95% of the variance. For this reason is interesting to look to the plane formed by this two terms and see the scores. We can see this using "biplot".
+
+```{r}
+#| warning: false
+#| message: false
+#| label: fig-biplot12
+#| fig-cap: Biplot with scores and loadings for PC1 vs PC2
+biplot(tecator_pc)
+```
+
+@fig-biplot12 *We see the samples as a black number in the plane, and the scores are the projection of those samples on the low axis (PC1), and left axis (PC2). The loadings are expressed as red arrow, and their projections must be done over the bottom and right axis. As we can see in the biplot of PC1 and PC2, the wavelengths between 922 and 936 have a high negative loading value for PC1, but very low for PC2.*
+
+```{r}
+#| warning: false
+#| message: false
+#| label: fig-loadings12
+#| fig-cap: Loadings 1 and 2
+matplot(seq(850, 1048, by = 2), tecator_pc$rotation[ , 1:2], type = "l", ylab = "", xlab = "wavelength", main = "Loadings 1 and 2", 
+        col = c("black", "red"))
+abline(h = 0)
+rect(xleft = 922, xright = 936, ybottom = -0.38, ytop = 0.21, border = "blue", lty = "dashed", lwd = 2 )
+legend("topright", legend = c("1st loading", "2nd loading"), lty = c(1, 2), col = c("black", "red"))
+
+
+```
+
+@fig-loadings12 *All those arrows in the plane that we call loadings (100 values, one for each wavelength), can be seen better as a spectrum where we see peaks and valleys that give details about the importance of every wavelength in the Principal Component. We show the area between 922 and 936 that we have been talking about.*
+
+Let´s see now the biplot for PC2 and PC3
+
+```{r}
+#| warning: false
+#| message: false
+#| label: fig-biplot23
+#| fig-cap: Biplot with scores and loadings for PC2 vs PC3
+biplot(tecator_pc, choices = 2:3)
+```
+
+@fig-biplot23 In the case of the plane formed by PC2 and PC3, we can see how the loadings go in almost all the directions in the plane. We can see also how some samples seems to be apart from the rest.
+
+```{r}
+#| warning: false
+#| message: false
+#| label: fig-loadings23
+#| fig-cap: Loadings 2 and 3
+matplot(seq(850, 1048, by = 2), tecator_pc$rotation[ , 2:3], type = "l", ylab = "", xlab = "wavelength", main = "Loadings 2 and 3", col = c("red", "blue"))
+legend("topright", legend = c("2nd loading", "3th loading"), lty = c(1, 2), col = c("red", "blue"))
+```
+
+Looking to the "biplots" and the "loadings" we have a better idea of the importance of every wavelength to the correspondent principal component.
+
+## How to find the peaks in the loading spectrum?
+
+We can use the package {photobiology} and the function valleys for the negative peaks and find_peaks for the positive ones, doing this we can study the loadings in more detail and check if they have certain degree of relationship with the outcome variables (parameters).
+
+Let´s have a look to the first loading (peaks and valleys), trying to find out what explain:
+
+```{r}
+#| warning: false
+#| message: false
+#| label: fig-loadings12bands
+#| fig-cap: Interpret loadings 1 and 2 bands
+matplot(seq(850, 1048, by = 2), tecator_pc$rotation[ , 1], type = "l", ylab = "", xlab = "wavelength", main = "Loading 1", col = "black")
+
+which(find_peaks(tecator_pc$rotation[ ,1]) == TRUE)
+valleys(tecator_pc$rotation[ , 1])
+abline(v = c(878, 906, 948, 1028), col = "blue")
+abline(v = c(892, 930, 972, 1018), col = "green")
+
+legend("bottomleft", legend = c("930....FAT", "948....WATER"), lty = 1, col = c("green", "black"))
+rect(xleft = 925, xright = 960, ybottom = -0.38, ytop = 0.21, border = "red", lty = "dashed", lwd = 2 )
+
+```
+
+By the literature we can know where the overtones for certain bonds like C_H, O_H or N-H are. And looking to the first loading, it seems that represents in certain way, the fat and moisture parameter. We just have to correlate the loadigs values for the first PC with the three parameters and see the high correlation with fat and moisture.
+
+```{r}
+#| warning: false
+#| message: false
+cor(tecator$Moisture, tecator_pc$x[ , 1])
+cor(tecator$Fat, tecator_pc$x[ , 1])
+cor(tecator$Protein, tecator_pc$x[ , 1])
+```
+
+As we have seen in previous posts fat and protein are inverse correlated, and that is the reason we have a negative high correlation for the protein with this first loading.
+
+We can see the XY plots for the reference values vs. the first loading values.
+
+```{r}
+#| label: fig-PC1vsMOI
+#| fig-cap: correlating Moisture with scores for loading 1
+plot(tecator$Moisture, tecator_pc$x[ , 1], xlab = "Moisture", ylab = "PC1  response", main = "Moisture vs PC1")
+
+```
+
+```{r}
+#| label: fig-PC1vsFAT
+#| fig-cap: correlating Fat with scores for loading 1
+plot(tecator$Fat, tecator_pc$x[ , 1], xlab = "Fat", ylab = "First loading response", main = "Fat vs PC1")
+```
+
+```{r}
+#| label: fig-PC1vsPROT
+#| fig-cap: correlating Protein with scores for loading 1
+plot(tecator$Protein, tecator_pc$x[ , 1], xlab = "Protein", ylab = "First loading response", main = "Protein vs PC1")
+```
+
+As we study more loadings we still see the bands which correspond to fat, water or protein, but the correlation with the reference values is less, but this is normal due that the highest was taken away by the first principal component and we are extracting from the remaining new variability that we want to interpret.
+
+As we see, there is certain correlation between the PC loadings and the parameters, so we can develop a regression called "principal components regression" to predict the values of new samples. So this is something we can do in coming posts.

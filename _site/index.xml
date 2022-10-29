@@ -10,7 +10,232 @@
 <atom:link href="https://quartopub.com/sites/jrcuesta/nir-chemometrics/index.xml" rel="self" type="application/rss+xml"/>
 <description>Blog about the use of R chemometric tools for NIR spectroscopy</description>
 <generator>quarto-1.0.36</generator>
-<lastBuildDate>Tue, 18 Oct 2022 22:00:00 GMT</lastBuildDate>
+<lastBuildDate>Thu, 20 Oct 2022 22:00:00 GMT</lastBuildDate>
+<item>
+  <title>PCA - NIT tutorial (part 8)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>Let´s load the workspace and the libraries we are going to use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws7.RData"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(photobiology)</span></code></pre></div>
+</div>
+<section id="principal-component-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="principal-component-analysis">Principal Component Analysis</h2>
+<p>We use the spectra matrix “X” and we want to decompose it into a matrix product:</p>
+</section>
+<section id="x-t.pt-e" class="level2">
+<h2 class="anchored" data-anchor-id="x-t.pt-e"><strong>X = T.P<sup>t</sup> + E</strong></h2>
+<p>where:</p>
+<ul>
+<li><p><strong>X</strong> is the spectra matrix (with the math treatment we have choose)</p></li>
+<li><p><strong>T</strong> is a score matrix,</p></li>
+<li><p><strong>P</strong> is the terms matrix and</p></li>
+<li><p><strong>E</strong> is the error matrix.</p></li>
+</ul>
+<p>There are several ways to calculate the PCA with R, but let´s start with “prcomp”. For the calculation we will use the tecator spectra with the SNV+DT2 that we have seen on part 6.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">tecator_pc <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">prcomp</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der2_spec)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;">summary</span>(tecator_pc)[[<span class="dv" style="color: #AD0000;">6</span>]][,<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">10</span>]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                               PC1         PC2         PC3          PC4
+Standard deviation     0.004966548 0.001532207 0.000939981 0.0005106424
+Proportion of Variance 0.869350000 0.082740000 0.031140000 0.0091900000
+Cumulative Proportion  0.869350000 0.952090000 0.983230000 0.9924200000
+                                PC5         PC6         PC7          PC8
+Standard deviation     0.0003223387 0.000200553 0.000164743 0.0001470434
+Proportion of Variance 0.0036600000 0.001420000 0.000960000 0.0007600000
+Cumulative Proportion  0.9960800000 0.997500000 0.998460000 0.9992200000
+                                PC9         PC10
+Standard deviation     0.0001073009 6.183104e-05
+Proportion of Variance 0.0004100000 1.300000e-04
+Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
+</div>
+</div>
+<p>In the summary we can see the quantity of variance explained by every term (or principal component). We can calculate the variance in percentage and plot it.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">percentVariance <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">round</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>sdev<span class="sc" style="color: #5E5E5E;">^</span><span class="dv" style="color: #AD0000;">2</span><span class="sc" style="color: #5E5E5E;">/</span><span class="fu" style="color: #4758AB;">sum</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>sdev<span class="sc" style="color: #5E5E5E;">^</span><span class="dv" style="color: #AD0000;">2</span>)<span class="sc" style="color: #5E5E5E;">*</span><span class="dv" style="color: #AD0000;">100</span>, <span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
+</div>
+<p>Figure&nbsp;1 <em>shows how the firsts PCs explain almost all the variance, so we can discard the rest and retain only the important ones.</em></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;">plot</span>(percentVariance[<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">10</span>], <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"b"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"PC number"</span>, <span class="at" style="color: #657422;">ylab=</span> <span class="st" style="color: #20794D;">"% Variance explained"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-expvar_pc" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-expvar_pc-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: Percentage Variance explained by PC</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Figure&nbsp;1 <em>The plot of the cumulative variance can give us a better idea about the number of principal components to keep:</em></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">plot</span>(<span class="fu" style="color: #4758AB;">cumsum</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>sdev<span class="sc" style="color: #5E5E5E;">^</span><span class="dv" style="color: #AD0000;">2</span> <span class="sc" style="color: #5E5E5E;">/</span> <span class="fu" style="color: #4758AB;">sum</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>sdev<span class="sc" style="color: #5E5E5E;">^</span><span class="dv" style="color: #AD0000;">2</span>)<span class="sc" style="color: #5E5E5E;">*</span><span class="dv" style="color: #AD0000;">100</span>)[<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">10</span>], <span class="at" style="color: #657422;">type=</span><span class="st" style="color: #20794D;">"b"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"PC number"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Cummulative Variance %"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-cumvar_pc" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-cumvar_pc-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: Cumulative variance as we add a new PC</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As we see, after 6 principal components the line becomes flat and almost 100% of the variance is explained (exactly 99.75 %). We see how the first one explain almost 87% of the variance, and the two first terms explain together more than 95% of the variance. For this reason is interesting to look to the plane formed by this two terms and see the scores. We can see this using “biplot”.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;">biplot</span>(tecator_pc)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-biplot12" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-biplot12-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 3: Biplot with scores and loadings for PC1 vs PC2</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Figure&nbsp;3 <em>We see the samples as a black number in the plane, and the scores are the projection of those samples on the low axis (PC1), and left axis (PC2). The loadings are expressed as red arrow, and their projections must be done over the bottom and right axis. As we can see in the biplot of PC1 and PC2, the wavelengths between 922 and 936 have a high negative loading value for PC1, but very low for PC2.</em></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">seq</span>(<span class="dv" style="color: #AD0000;">850</span>, <span class="dv" style="color: #AD0000;">1048</span>, <span class="at" style="color: #657422;">by =</span> <span class="dv" style="color: #AD0000;">2</span>), tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>rotation[ , <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">2</span>], <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">""</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelength"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Loadings 1 and 2"</span>, </span>
+<span id="cb8-2">        <span class="at" style="color: #657422;">col =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"black"</span>, <span class="st" style="color: #20794D;">"red"</span>))</span>
+<span id="cb8-3"><span class="fu" style="color: #4758AB;">abline</span>(<span class="at" style="color: #657422;">h =</span> <span class="dv" style="color: #AD0000;">0</span>)</span>
+<span id="cb8-4"><span class="fu" style="color: #4758AB;">rect</span>(<span class="at" style="color: #657422;">xleft =</span> <span class="dv" style="color: #AD0000;">922</span>, <span class="at" style="color: #657422;">xright =</span> <span class="dv" style="color: #AD0000;">936</span>, <span class="at" style="color: #657422;">ybottom =</span> <span class="sc" style="color: #5E5E5E;">-</span><span class="fl" style="color: #AD0000;">0.38</span>, <span class="at" style="color: #657422;">ytop =</span> <span class="fl" style="color: #AD0000;">0.21</span>, <span class="at" style="color: #657422;">border =</span> <span class="st" style="color: #20794D;">"blue"</span>, <span class="at" style="color: #657422;">lty =</span> <span class="st" style="color: #20794D;">"dashed"</span>, <span class="at" style="color: #657422;">lwd =</span> <span class="dv" style="color: #AD0000;">2</span> )</span>
+<span id="cb8-5"><span class="fu" style="color: #4758AB;">legend</span>(<span class="st" style="color: #20794D;">"topright"</span>, <span class="at" style="color: #657422;">legend =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"1st loading"</span>, <span class="st" style="color: #20794D;">"2nd loading"</span>), <span class="at" style="color: #657422;">lty =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">2</span>), <span class="at" style="color: #657422;">col =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"black"</span>, <span class="st" style="color: #20794D;">"red"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-loadings12" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-loadings12-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 4: Loadings 1 and 2</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Figure&nbsp;4 <em>All those arrows in the plane that we call loadings (100 values, one for each wavelength), can be seen better as a spectrum where we see peaks and valleys that give details about the importance of every wavelength in the Principal Component. We show the area between 922 and 936 that we have been talking about.</em></p>
+<p>Let´s see now the biplot for PC2 and PC3</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;">biplot</span>(tecator_pc, <span class="at" style="color: #657422;">choices =</span> <span class="dv" style="color: #AD0000;">2</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">3</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-biplot23" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-biplot23-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 5: Biplot with scores and loadings for PC2 vs PC3</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Figure&nbsp;5 In the case of the plane formed by PC2 and PC3, we can see how the loadings go in almost all the directions in the plane. We can see also how some samples seems to be apart from the rest.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">seq</span>(<span class="dv" style="color: #AD0000;">850</span>, <span class="dv" style="color: #AD0000;">1048</span>, <span class="at" style="color: #657422;">by =</span> <span class="dv" style="color: #AD0000;">2</span>), tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>rotation[ , <span class="dv" style="color: #AD0000;">2</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">3</span>], <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">""</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelength"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Loadings 2 and 3"</span>, <span class="at" style="color: #657422;">col =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"red"</span>, <span class="st" style="color: #20794D;">"blue"</span>))</span>
+<span id="cb10-2"><span class="fu" style="color: #4758AB;">legend</span>(<span class="st" style="color: #20794D;">"topright"</span>, <span class="at" style="color: #657422;">legend =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"2nd loading"</span>, <span class="st" style="color: #20794D;">"3th loading"</span>), <span class="at" style="color: #657422;">lty =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">2</span>), <span class="at" style="color: #657422;">col =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"red"</span>, <span class="st" style="color: #20794D;">"blue"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-loadings23" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-loadings23-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 6: Loadings 2 and 3</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Looking to the “biplots” and the “loadings” we have a better idea of the importance of every wavelength to the correspondent principal component.</p>
+</section>
+<section id="how-to-find-the-peaks-in-the-loading-spectrum" class="level2">
+<h2 class="anchored" data-anchor-id="how-to-find-the-peaks-in-the-loading-spectrum">How to find the peaks in the loading spectrum?</h2>
+<p>We can use the package {photobiology} and the function valleys for the negative peaks and find_peaks for the positive ones, doing this we can study the loadings in more detail and check if they have certain degree of relationship with the outcome variables (parameters).</p>
+<p>Let´s have a look to the first loading (peaks and valleys), trying to find out what explain:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">seq</span>(<span class="dv" style="color: #AD0000;">850</span>, <span class="dv" style="color: #AD0000;">1048</span>, <span class="at" style="color: #657422;">by =</span> <span class="dv" style="color: #AD0000;">2</span>), tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>rotation[ , <span class="dv" style="color: #AD0000;">1</span>], <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">""</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelength"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Loading 1"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"black"</span>)</span>
+<span id="cb11-2"></span>
+<span id="cb11-3"><span class="fu" style="color: #4758AB;">which</span>(<span class="fu" style="color: #4758AB;">find_peaks</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>rotation[ ,<span class="dv" style="color: #AD0000;">1</span>]) <span class="sc" style="color: #5E5E5E;">==</span> <span class="cn" style="color: #8f5902;">TRUE</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> 854  858  878  906  948  988 1002 1028 
+   3    5   15   29   50   70   77   90 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="fu" style="color: #4758AB;">valleys</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>rotation[ , <span class="dv" style="color: #AD0000;">1</span>])</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         892          930          972          998         1018         1036 
+-0.003496019 -0.359915187  0.023924714  0.031066416 -0.026031653 -0.045698228 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;">abline</span>(<span class="at" style="color: #657422;">v =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">878</span>, <span class="dv" style="color: #AD0000;">906</span>, <span class="dv" style="color: #AD0000;">948</span>, <span class="dv" style="color: #AD0000;">1028</span>), <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"blue"</span>)</span>
+<span id="cb15-2"><span class="fu" style="color: #4758AB;">abline</span>(<span class="at" style="color: #657422;">v =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">892</span>, <span class="dv" style="color: #AD0000;">930</span>, <span class="dv" style="color: #AD0000;">972</span>, <span class="dv" style="color: #AD0000;">1018</span>), <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"green"</span>)</span>
+<span id="cb15-3"></span>
+<span id="cb15-4"><span class="fu" style="color: #4758AB;">legend</span>(<span class="st" style="color: #20794D;">"bottomleft"</span>, <span class="at" style="color: #657422;">legend =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"930....FAT"</span>, <span class="st" style="color: #20794D;">"948....WATER"</span>), <span class="at" style="color: #657422;">lty =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">col =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"green"</span>, <span class="st" style="color: #20794D;">"black"</span>))</span>
+<span id="cb15-5"><span class="fu" style="color: #4758AB;">rect</span>(<span class="at" style="color: #657422;">xleft =</span> <span class="dv" style="color: #AD0000;">925</span>, <span class="at" style="color: #657422;">xright =</span> <span class="dv" style="color: #AD0000;">960</span>, <span class="at" style="color: #657422;">ybottom =</span> <span class="sc" style="color: #5E5E5E;">-</span><span class="fl" style="color: #AD0000;">0.38</span>, <span class="at" style="color: #657422;">ytop =</span> <span class="fl" style="color: #AD0000;">0.21</span>, <span class="at" style="color: #657422;">border =</span> <span class="st" style="color: #20794D;">"red"</span>, <span class="at" style="color: #657422;">lty =</span> <span class="st" style="color: #20794D;">"dashed"</span>, <span class="at" style="color: #657422;">lwd =</span> <span class="dv" style="color: #AD0000;">2</span> )</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-loadings12bands" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-loadings12bands-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 7: Interpret loadings 1 and 2 bands</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>By the literature we can know where the overtones for certain bonds like C_H, O_H or N-H are. And looking to the first loading, it seems that represents in certain way, the fat and moisture parameter. We just have to correlate the loadigs values for the first PC with the three parameters and see the high correlation with fat and moisture.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Moisture, tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span>])</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -0.9777829</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Fat, tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span>])</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9823003</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span>])</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -0.829764</code></pre>
+</div>
+</div>
+<p>As we have seen in previous posts fat and protein are inverse correlated, and that is the reason we have a negative high correlation for the protein with this first loading.</p>
+<p>We can see the XY plots for the reference values vs.&nbsp;the first loading values.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><span class="fu" style="color: #4758AB;">plot</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Moisture, tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span>], <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"Moisture"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"PC1  response"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Moisture vs PC1"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-PC1vsMOI" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-PC1vsMOI-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 8: correlating Moisture with scores for loading 1</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><span class="fu" style="color: #4758AB;">plot</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Fat, tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span>], <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"Fat"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"First loading response"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Fat vs PC1"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-PC1vsFAT" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-PC1vsFAT-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 9: correlating Fat with scores for loading 1</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><span class="fu" style="color: #4758AB;">plot</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span>], <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"Protein"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"First loading response"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Protein vs PC1"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-PC1vsPROT" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-PC1vsPROT-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 10: correlating Protein with scores for loading 1</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As we study more loadings we still see the bands which correspond to fat, water or protein, but the correlation with the reference values is less, but this is normal due that the highest was taken away by the first principal component and we are extracting from the remaining new variability that we want to interpret.</p>
+<p>As we see, there is certain correlation between the PC loadings and the parameters, so we can develop a regression called “principal components regression” to predict the values of new samples. So this is something we can do in coming posts.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <category>PCA</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8.html</guid>
+  <pubDate>Thu, 20 Oct 2022 22:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/biplot23.jpeg" medium="image" type="image/jpeg"/>
+</item>
 <item>
   <title>Near Infrared Transmitance Tutorial (part 7)</title>
   <dc:creator>José Ramón Cuesta</dc:creator>
@@ -217,11 +442,23 @@ Let´s do it with ggplot2
 </div>
 </div>
 <p>We have several options now to develop models and see which one gives the better statistics, of course there are more math treatments we can try but we stop in this tutorial with the derivatives and in the next ones we will check the different options to find outliers.</p>
+<p>Finally we add the new math treatments to the tecator database to use it in the coming posts:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">tecator<span class="sc" style="color: #5E5E5E;">$</span>der1_spec <span class="ot" style="color: #003B4F;">&lt;-</span> der1_spec</span>
+<span id="cb10-2">tecator<span class="sc" style="color: #5E5E5E;">$</span>der2_spec <span class="ot" style="color: #003B4F;">&lt;-</span> der2_spec</span>
+<span id="cb10-3">tecator<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der1_spec <span class="ot" style="color: #003B4F;">&lt;-</span> snvdt2der1_spec</span>
+<span id="cb10-4">tecator<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der2_spec <span class="ot" style="color: #003B4F;">&lt;-</span> snvdt2der2_spec</span></code></pre></div>
+</div>
+<p>and save the dataframe for future use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws7.RData"</span>)</span></code></pre></div>
+</div>
 
 
 </section>
 
  ]]></description>
+  <category>R</category>
   <category>NIT Tutorial</category>
   <category>Removing scatter</category>
   <category>Math-treatments</category>
@@ -393,6 +630,7 @@ Let´s do it with ggplot2
 </section>
 
  ]]></description>
+  <category>R</category>
   <category>NIT Tutorial</category>
   <category>Removing scatter</category>
   <category>Math-treatments</category>
@@ -504,6 +742,7 @@ Let´s do it with ggplot2
 </section>
 
  ]]></description>
+  <category>R</category>
   <category>NIT Tutorial</category>
   <category>Removing scatter</category>
   <category>Math-treatments</category>
@@ -613,6 +852,7 @@ Let´s do it with ggplot2
 </section>
 
  ]]></description>
+  <category>R</category>
   <category>NIT Tutorial</category>
   <category>Removing scatter</category>
   <category>Math-treatments</category>
@@ -732,6 +972,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 </section>
 
  ]]></description>
+  <category>R</category>
   <category>NIT Tutorial</category>
   <category>Collinearity</category>
   <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_3/NIT_tutorial_3.html</guid>
@@ -766,8 +1007,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 </div>
 <p>The tecator data is available as well in the library “modeldata”, but with the name “meats”, so we can load it into the workspace and work with it using the tidyverse and tidymodels libraries. The idea of this tutorial is getting use to work with tidyverse and tidymodels at the same time that with classic R.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">data</span>(meats)</span>
-<span id="cb4-2">?meats</span></code></pre></div>
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">data</span>(meats)</span></code></pre></div>
 </div>
 <p>The first 100 columns are the wavelengths are the datapoints and the last 3 the parameters, so we can rename de column names, and add an extra column called “SampleID” (same as row number).</p>
 <div class="cell">
@@ -853,6 +1093,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 </section>
 
  ]]></description>
+  <category>R</category>
   <category>NIT Tutorial</category>
   <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_2/NIT_tutorial_2.html</guid>
   <pubDate>Tue, 27 Sep 2022 22:00:00 GMT</pubDate>
@@ -871,8 +1112,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <h2 class="anchored" data-anchor-id="loading-and-organizing-data">Loading and organizing data</h2>
 <p>This is the first post about how to work with Near Infrared Transmitance spectra, using the data available in the package Caret and called “tecator”. Just consult the information about this data in R</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(caret)</span>
-<span id="cb1-2">?tecator</span></code></pre></div>
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(caret)</span></code></pre></div>
 </div>
 <p>When loading tecator, we have two data tables: “absorp” and “endpoints” with the spectra and reference values for the parameters “water”, “fat” and “protein” for the 215 meat samples.</p>
 <div class="cell">
@@ -964,6 +1204,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 </section>
 
  ]]></description>
+  <category>R</category>
   <category>NIT Tutorial</category>
   <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_1/NIT_tutorial_1.html</guid>
   <pubDate>Sun, 25 Sep 2022 22:00:00 GMT</pubDate>

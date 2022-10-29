@@ -1,0 +1,1213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>NIR-Chemometrics</title>
+<link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/index.html#category=R</link>
+<atom:link href="https://quartopub.com/sites/jrcuesta/nir-chemometrics/index-r.xml" rel="self" type="application/rss+xml"/>
+<description>Blog about the use of R chemometric tools for NIR spectroscopy</description>
+<generator>quarto-1.0.36</generator>
+<lastBuildDate>Thu, 20 Oct 2022 22:00:00 GMT</lastBuildDate>
+<item>
+  <title>PCA - NIT tutorial (part 8)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>Let´s load the workspace and the libraries we are going to use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws7.RData"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(photobiology)</span></code></pre></div>
+</div>
+<section id="principal-component-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="principal-component-analysis">Principal Component Analysis</h2>
+<p>We use the spectra matrix “X” and we want to decompose it into a matrix product:</p>
+</section>
+<section id="x-t.pt-e" class="level2">
+<h2 class="anchored" data-anchor-id="x-t.pt-e"><strong>X = T.P<sup>t</sup> + E</strong></h2>
+<p>where:</p>
+<ul>
+<li><p><strong>X</strong> is the spectra matrix (with the math treatment we have choose)</p></li>
+<li><p><strong>T</strong> is a score matrix,</p></li>
+<li><p><strong>P</strong> is the terms matrix and</p></li>
+<li><p><strong>E</strong> is the error matrix.</p></li>
+</ul>
+<p>There are several ways to calculate the PCA with R, but let´s start with “prcomp”. For the calculation we will use the tecator spectra with the SNV+DT2 that we have seen on part 6.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">tecator_pc <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">prcomp</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der2_spec)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;">summary</span>(tecator_pc)[[<span class="dv" style="color: #AD0000;">6</span>]][,<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">10</span>]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                               PC1         PC2         PC3          PC4
+Standard deviation     0.004966548 0.001532207 0.000939981 0.0005106424
+Proportion of Variance 0.869350000 0.082740000 0.031140000 0.0091900000
+Cumulative Proportion  0.869350000 0.952090000 0.983230000 0.9924200000
+                                PC5         PC6         PC7          PC8
+Standard deviation     0.0003223387 0.000200553 0.000164743 0.0001470434
+Proportion of Variance 0.0036600000 0.001420000 0.000960000 0.0007600000
+Cumulative Proportion  0.9960800000 0.997500000 0.998460000 0.9992200000
+                                PC9         PC10
+Standard deviation     0.0001073009 6.183104e-05
+Proportion of Variance 0.0004100000 1.300000e-04
+Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
+</div>
+</div>
+<p>In the summary we can see the quantity of variance explained by every term (or principal component). We can calculate the variance in percentage and plot it.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">percentVariance <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">round</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>sdev<span class="sc" style="color: #5E5E5E;">^</span><span class="dv" style="color: #AD0000;">2</span><span class="sc" style="color: #5E5E5E;">/</span><span class="fu" style="color: #4758AB;">sum</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>sdev<span class="sc" style="color: #5E5E5E;">^</span><span class="dv" style="color: #AD0000;">2</span>)<span class="sc" style="color: #5E5E5E;">*</span><span class="dv" style="color: #AD0000;">100</span>, <span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
+</div>
+<p>Figure&nbsp;1 <em>shows how the firsts PCs explain almost all the variance, so we can discard the rest and retain only the important ones.</em></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;">plot</span>(percentVariance[<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">10</span>], <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"b"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"PC number"</span>, <span class="at" style="color: #657422;">ylab=</span> <span class="st" style="color: #20794D;">"% Variance explained"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-expvar_pc" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-expvar_pc-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: Percentage Variance explained by PC</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Figure&nbsp;1 <em>The plot of the cumulative variance can give us a better idea about the number of principal components to keep:</em></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">plot</span>(<span class="fu" style="color: #4758AB;">cumsum</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>sdev<span class="sc" style="color: #5E5E5E;">^</span><span class="dv" style="color: #AD0000;">2</span> <span class="sc" style="color: #5E5E5E;">/</span> <span class="fu" style="color: #4758AB;">sum</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>sdev<span class="sc" style="color: #5E5E5E;">^</span><span class="dv" style="color: #AD0000;">2</span>)<span class="sc" style="color: #5E5E5E;">*</span><span class="dv" style="color: #AD0000;">100</span>)[<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">10</span>], <span class="at" style="color: #657422;">type=</span><span class="st" style="color: #20794D;">"b"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"PC number"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Cummulative Variance %"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-cumvar_pc" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-cumvar_pc-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: Cumulative variance as we add a new PC</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As we see, after 6 principal components the line becomes flat and almost 100% of the variance is explained (exactly 99.75 %). We see how the first one explain almost 87% of the variance, and the two first terms explain together more than 95% of the variance. For this reason is interesting to look to the plane formed by this two terms and see the scores. We can see this using “biplot”.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;">biplot</span>(tecator_pc)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-biplot12" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-biplot12-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 3: Biplot with scores and loadings for PC1 vs PC2</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Figure&nbsp;3 <em>We see the samples as a black number in the plane, and the scores are the projection of those samples on the low axis (PC1), and left axis (PC2). The loadings are expressed as red arrow, and their projections must be done over the bottom and right axis. As we can see in the biplot of PC1 and PC2, the wavelengths between 922 and 936 have a high negative loading value for PC1, but very low for PC2.</em></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">seq</span>(<span class="dv" style="color: #AD0000;">850</span>, <span class="dv" style="color: #AD0000;">1048</span>, <span class="at" style="color: #657422;">by =</span> <span class="dv" style="color: #AD0000;">2</span>), tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>rotation[ , <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">2</span>], <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">""</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelength"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Loadings 1 and 2"</span>, </span>
+<span id="cb8-2">        <span class="at" style="color: #657422;">col =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"black"</span>, <span class="st" style="color: #20794D;">"red"</span>))</span>
+<span id="cb8-3"><span class="fu" style="color: #4758AB;">abline</span>(<span class="at" style="color: #657422;">h =</span> <span class="dv" style="color: #AD0000;">0</span>)</span>
+<span id="cb8-4"><span class="fu" style="color: #4758AB;">rect</span>(<span class="at" style="color: #657422;">xleft =</span> <span class="dv" style="color: #AD0000;">922</span>, <span class="at" style="color: #657422;">xright =</span> <span class="dv" style="color: #AD0000;">936</span>, <span class="at" style="color: #657422;">ybottom =</span> <span class="sc" style="color: #5E5E5E;">-</span><span class="fl" style="color: #AD0000;">0.38</span>, <span class="at" style="color: #657422;">ytop =</span> <span class="fl" style="color: #AD0000;">0.21</span>, <span class="at" style="color: #657422;">border =</span> <span class="st" style="color: #20794D;">"blue"</span>, <span class="at" style="color: #657422;">lty =</span> <span class="st" style="color: #20794D;">"dashed"</span>, <span class="at" style="color: #657422;">lwd =</span> <span class="dv" style="color: #AD0000;">2</span> )</span>
+<span id="cb8-5"><span class="fu" style="color: #4758AB;">legend</span>(<span class="st" style="color: #20794D;">"topright"</span>, <span class="at" style="color: #657422;">legend =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"1st loading"</span>, <span class="st" style="color: #20794D;">"2nd loading"</span>), <span class="at" style="color: #657422;">lty =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">2</span>), <span class="at" style="color: #657422;">col =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"black"</span>, <span class="st" style="color: #20794D;">"red"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-loadings12" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-loadings12-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 4: Loadings 1 and 2</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Figure&nbsp;4 <em>All those arrows in the plane that we call loadings (100 values, one for each wavelength), can be seen better as a spectrum where we see peaks and valleys that give details about the importance of every wavelength in the Principal Component. We show the area between 922 and 936 that we have been talking about.</em></p>
+<p>Let´s see now the biplot for PC2 and PC3</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;">biplot</span>(tecator_pc, <span class="at" style="color: #657422;">choices =</span> <span class="dv" style="color: #AD0000;">2</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">3</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-biplot23" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-biplot23-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 5: Biplot with scores and loadings for PC2 vs PC3</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Figure&nbsp;5 In the case of the plane formed by PC2 and PC3, we can see how the loadings go in almost all the directions in the plane. We can see also how some samples seems to be apart from the rest.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">seq</span>(<span class="dv" style="color: #AD0000;">850</span>, <span class="dv" style="color: #AD0000;">1048</span>, <span class="at" style="color: #657422;">by =</span> <span class="dv" style="color: #AD0000;">2</span>), tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>rotation[ , <span class="dv" style="color: #AD0000;">2</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">3</span>], <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">""</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelength"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Loadings 2 and 3"</span>, <span class="at" style="color: #657422;">col =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"red"</span>, <span class="st" style="color: #20794D;">"blue"</span>))</span>
+<span id="cb10-2"><span class="fu" style="color: #4758AB;">legend</span>(<span class="st" style="color: #20794D;">"topright"</span>, <span class="at" style="color: #657422;">legend =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"2nd loading"</span>, <span class="st" style="color: #20794D;">"3th loading"</span>), <span class="at" style="color: #657422;">lty =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">2</span>), <span class="at" style="color: #657422;">col =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"red"</span>, <span class="st" style="color: #20794D;">"blue"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-loadings23" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-loadings23-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 6: Loadings 2 and 3</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Looking to the “biplots” and the “loadings” we have a better idea of the importance of every wavelength to the correspondent principal component.</p>
+</section>
+<section id="how-to-find-the-peaks-in-the-loading-spectrum" class="level2">
+<h2 class="anchored" data-anchor-id="how-to-find-the-peaks-in-the-loading-spectrum">How to find the peaks in the loading spectrum?</h2>
+<p>We can use the package {photobiology} and the function valleys for the negative peaks and find_peaks for the positive ones, doing this we can study the loadings in more detail and check if they have certain degree of relationship with the outcome variables (parameters).</p>
+<p>Let´s have a look to the first loading (peaks and valleys), trying to find out what explain:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">seq</span>(<span class="dv" style="color: #AD0000;">850</span>, <span class="dv" style="color: #AD0000;">1048</span>, <span class="at" style="color: #657422;">by =</span> <span class="dv" style="color: #AD0000;">2</span>), tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>rotation[ , <span class="dv" style="color: #AD0000;">1</span>], <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">""</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelength"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Loading 1"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"black"</span>)</span>
+<span id="cb11-2"></span>
+<span id="cb11-3"><span class="fu" style="color: #4758AB;">which</span>(<span class="fu" style="color: #4758AB;">find_peaks</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>rotation[ ,<span class="dv" style="color: #AD0000;">1</span>]) <span class="sc" style="color: #5E5E5E;">==</span> <span class="cn" style="color: #8f5902;">TRUE</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> 854  858  878  906  948  988 1002 1028 
+   3    5   15   29   50   70   77   90 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="fu" style="color: #4758AB;">valleys</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>rotation[ , <span class="dv" style="color: #AD0000;">1</span>])</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         892          930          972          998         1018         1036 
+-0.003496019 -0.359915187  0.023924714  0.031066416 -0.026031653 -0.045698228 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;">abline</span>(<span class="at" style="color: #657422;">v =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">878</span>, <span class="dv" style="color: #AD0000;">906</span>, <span class="dv" style="color: #AD0000;">948</span>, <span class="dv" style="color: #AD0000;">1028</span>), <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"blue"</span>)</span>
+<span id="cb15-2"><span class="fu" style="color: #4758AB;">abline</span>(<span class="at" style="color: #657422;">v =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">892</span>, <span class="dv" style="color: #AD0000;">930</span>, <span class="dv" style="color: #AD0000;">972</span>, <span class="dv" style="color: #AD0000;">1018</span>), <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"green"</span>)</span>
+<span id="cb15-3"></span>
+<span id="cb15-4"><span class="fu" style="color: #4758AB;">legend</span>(<span class="st" style="color: #20794D;">"bottomleft"</span>, <span class="at" style="color: #657422;">legend =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"930....FAT"</span>, <span class="st" style="color: #20794D;">"948....WATER"</span>), <span class="at" style="color: #657422;">lty =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">col =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"green"</span>, <span class="st" style="color: #20794D;">"black"</span>))</span>
+<span id="cb15-5"><span class="fu" style="color: #4758AB;">rect</span>(<span class="at" style="color: #657422;">xleft =</span> <span class="dv" style="color: #AD0000;">925</span>, <span class="at" style="color: #657422;">xright =</span> <span class="dv" style="color: #AD0000;">960</span>, <span class="at" style="color: #657422;">ybottom =</span> <span class="sc" style="color: #5E5E5E;">-</span><span class="fl" style="color: #AD0000;">0.38</span>, <span class="at" style="color: #657422;">ytop =</span> <span class="fl" style="color: #AD0000;">0.21</span>, <span class="at" style="color: #657422;">border =</span> <span class="st" style="color: #20794D;">"red"</span>, <span class="at" style="color: #657422;">lty =</span> <span class="st" style="color: #20794D;">"dashed"</span>, <span class="at" style="color: #657422;">lwd =</span> <span class="dv" style="color: #AD0000;">2</span> )</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-loadings12bands" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-loadings12bands-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 7: Interpret loadings 1 and 2 bands</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>By the literature we can know where the overtones for certain bonds like C_H, O_H or N-H are. And looking to the first loading, it seems that represents in certain way, the fat and moisture parameter. We just have to correlate the loadigs values for the first PC with the three parameters and see the high correlation with fat and moisture.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Moisture, tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span>])</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -0.9777829</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Fat, tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span>])</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9823003</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span>])</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -0.829764</code></pre>
+</div>
+</div>
+<p>As we have seen in previous posts fat and protein are inverse correlated, and that is the reason we have a negative high correlation for the protein with this first loading.</p>
+<p>We can see the XY plots for the reference values vs.&nbsp;the first loading values.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><span class="fu" style="color: #4758AB;">plot</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Moisture, tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span>], <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"Moisture"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"PC1  response"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Moisture vs PC1"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-PC1vsMOI" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-PC1vsMOI-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 8: correlating Moisture with scores for loading 1</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><span class="fu" style="color: #4758AB;">plot</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Fat, tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span>], <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"Fat"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"First loading response"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Fat vs PC1"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-PC1vsFAT" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-PC1vsFAT-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 9: correlating Fat with scores for loading 1</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><span class="fu" style="color: #4758AB;">plot</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span>], <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"Protein"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"First loading response"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Protein vs PC1"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-PC1vsPROT" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-PC1vsPROT-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 10: correlating Protein with scores for loading 1</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As we study more loadings we still see the bands which correspond to fat, water or protein, but the correlation with the reference values is less, but this is normal due that the highest was taken away by the first principal component and we are extracting from the remaining new variability that we want to interpret.</p>
+<p>As we see, there is certain correlation between the PC loadings and the parameters, so we can develop a regression called “principal components regression” to predict the values of new samples. So this is something we can do in coming posts.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <category>PCA</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8.html</guid>
+  <pubDate>Thu, 20 Oct 2022 22:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/biplot23.jpeg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>Near Infrared Transmitance Tutorial (part 7)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>Let´s start by loading our workspace and the libraries we will use in this post:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws6.RData"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(tidyverse)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;">library</span>(prospectr)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">mar=</span><span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">5</span>,<span class="dv" style="color: #AD0000;">4</span>,<span class="dv" style="color: #AD0000;">4</span>,<span class="dv" style="color: #AD0000;">2</span>)<span class="sc" style="color: #5E5E5E;">+</span><span class="fl" style="color: #AD0000;">0.1</span>)</span></code></pre></div>
+</div>
+<p>We have seen some of the most popular scatter correction methods in the previous posts, and now, in this one, we will try the derivatives (first and second) alone and combined with SNV and the quadratic detrend.</p>
+<section id="first-derivative" class="level2">
+<h2 class="anchored" data-anchor-id="first-derivative">First Derivative</h2>
+<p>We are use to see peaks and try to see at which wavelengths are the peaks and find out what type of bonds absorb at those wavelengths. Of course in the NIR bands, due to they are quite broad bands, the peaks are not so sharp as we would like to see them (like in the middle infrared), and everything became even worse as they combine with other neighbors bands forming overlapping bands even broader.</p>
+<p>The derivatives improve the resolution, increasing the separation of the overlaping bands, but the cost is the difficulty to interpret them. In the case of the first derivative, the peak maximum change to a zero-crossing. Let´s use the {prospectr} package to calculate the first derivative of the meat raw spectra: The fuction we use is gapDer, where:</p>
+<ul>
+<li><p><strong>X</strong> = the raw spectra matrix (we could use absorp or tecator$spec)</p></li>
+<li><p><strong>m</strong> = order of the derivative (for the first derivative we use 1)</p></li>
+<li><p><strong>w</strong> = gap size (we will use 1)</p></li>
+<li><p><strong>s</strong> = segment size (space on both sides of the gap to average the absorbance values)</p></li>
+<li><p><strong>delta.wav</strong> = interval between data points (2 in this case)</p></li>
+</ul>
+<p>Let´s calculate the first derivative alone and the combination of SNV and Detrend plus the first derivative:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;">#First derivative calculation</span></span>
+<span id="cb2-2">der1_spec <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">gapDer</span>(absorp, <span class="at" style="color: #657422;">m =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">w =</span> <span class="dv" style="color: #AD0000;">5</span>, <span class="at" style="color: #657422;">s =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">delta.wav =</span> <span class="dv" style="color: #AD0000;">2</span>)</span>
+<span id="cb2-3"><span class="co" style="color: #5E5E5E;">#SNV and Detrend2 plus First Derivative</span></span>
+<span id="cb2-4">snvdt2der1_spec <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">gapDer</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec, <span class="at" style="color: #657422;">m =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">w =</span> <span class="dv" style="color: #AD0000;">5</span>, <span class="at" style="color: #657422;">s =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">delta.wav =</span> <span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
+</div>
+<div class="cell">
+
+</div>
+<p>Figure&nbsp;1 compares the spectra treated with SNV plus Quadratic Detrend with the spectra of just the first derivative.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="fu" style="color: #4758AB;">t</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"SNVDT2 vs 1º Der"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"black"</span>, <span class="at" style="color: #657422;">xaxt =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb3-2"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new=</span><span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb3-3"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(der1_spec), <span class="fu" style="color: #4758AB;">t</span>(der1_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>,<span class="at" style="color: #657422;">lty =</span> <span class="dv" style="color: #AD0000;">4</span>,<span class="at" style="color: #657422;">axes =</span> <span class="cn" style="color: #8f5902;">FALSE</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>, <span class="at" style="color: #657422;">bty =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb3-4"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">4</span>)</span>
+<span id="cb3-5"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-SNVDT2_1der" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-SNVDT2_1der-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: SNVDT2 and First derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Figure&nbsp;2 compares the spectra treated with SNV plus Quadratic Detrend with the first derivative applied to the SNV+DT2 spectra.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="fu" style="color: #4758AB;">t</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"SNVDT2 vs SNVDT2 + 1º Der"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"black"</span>, <span class="at" style="color: #657422;">xaxt =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb4-2"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new=</span><span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb4-3"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(snvdt2der1_spec), <span class="fu" style="color: #4758AB;">t</span>(snvdt2der1_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>,<span class="at" style="color: #657422;">lty =</span> <span class="dv" style="color: #AD0000;">4</span>,<span class="at" style="color: #657422;">axes =</span> <span class="cn" style="color: #8f5902;">FALSE</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>, <span class="at" style="color: #657422;">bty =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb4-4"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">4</span>)</span>
+<span id="cb4-5"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-SNVDT2_SNVDT21der" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-SNVDT2_SNVDT21der-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: SNVDT2 and SNVDT2 + First Derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="second-derivative" class="level2">
+<h2 class="anchored" data-anchor-id="second-derivative">Second derivative</h2>
+<p>In the calculation of the second derivative the peak maximum becomes a peak minimum, creating some kind of shoulders on the sides so it is necessary to have this on mind when interpreting the spectra. The resolution of the bands change depending of the values of “w” and “s” we choose, if the values are lower the resolution increase and at the same time the noise, so it is necessary to find a compromise between this both elements.</p>
+<p>Now let´s calculate the second derivative for the raw spectra and for the spectra treated with SNV+DT2 ( we have done this calculation in the previous post).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">der2_spec <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">gapDer</span>(absorp, <span class="at" style="color: #657422;">m =</span> <span class="dv" style="color: #AD0000;">2</span>, <span class="at" style="color: #657422;">w =</span> <span class="dv" style="color: #AD0000;">5</span>, <span class="at" style="color: #657422;">s =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">delta.wav =</span> <span class="dv" style="color: #AD0000;">2</span>)</span>
+<span id="cb5-2">snvdt2der2_spec <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">gapDer</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec, <span class="at" style="color: #657422;">m =</span> <span class="dv" style="color: #AD0000;">2</span>, <span class="at" style="color: #657422;">w =</span> <span class="dv" style="color: #AD0000;">5</span>, <span class="at" style="color: #657422;">s =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">delta.wav =</span> <span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
+</div>
+<p>We have to prepare some code to match the wavelengths due that the derivatives reduce the wavelenth range on both extremes depending of the values of “w” and “s”.</p>
+<div class="cell">
+
+</div>
+<p>Figure&nbsp;3 compares the spectra treated with SNV plus Quadratic Detrend with the spectra of just the second derivative.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="fu" style="color: #4758AB;">t</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"SNVDT2 vs 2º Der"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"black"</span>, <span class="at" style="color: #657422;">xaxt =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb6-2"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new=</span><span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb6-3"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(der2_spec), <span class="fu" style="color: #4758AB;">t</span>(der2_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>,<span class="at" style="color: #657422;">lty =</span> <span class="dv" style="color: #AD0000;">4</span>, <span class="at" style="color: #657422;">axes =</span> <span class="cn" style="color: #8f5902;">FALSE</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>, <span class="at" style="color: #657422;">bty =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb6-4"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">4</span>)</span>
+<span id="cb6-5"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-SNVDT2_2der" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-SNVDT2_2der-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 3: SNVDT2 and Second derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Figure&nbsp;4 compares the spectra treated with SNV plus Quadratic Detrend with the second derivative applied to the SNV+DT2 spectra.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="fu" style="color: #4758AB;">t</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"SNVDT2 vs SNVDT2 + 2º Der"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"black"</span>, <span class="at" style="color: #657422;">xaxt =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb7-2"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new=</span><span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb7-3"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(snvdt2der2_spec), <span class="fu" style="color: #4758AB;">t</span>(snvdt2der2_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>,<span class="at" style="color: #657422;">lty =</span> <span class="dv" style="color: #AD0000;">4</span>, <span class="at" style="color: #657422;">axes =</span> <span class="cn" style="color: #8f5902;">FALSE</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>, <span class="at" style="color: #657422;">bty =</span> <span class="st" style="color: #20794D;">"n"</span>)</span>
+<span id="cb7-4"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">4</span>)</span>
+<span id="cb7-5"><span class="fu" style="color: #4758AB;">axis</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-SNVDT2_SNVDT22der" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-SNVDT2_SNVDT22der-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 4: SNVDT2 and SNVDT2 + Second Derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="checking-the-correlation-with-the-protein-parameter-for-the-math-treatments-calculated-in-this-post" class="level2">
+<h2 class="anchored" data-anchor-id="checking-the-correlation-with-the-protein-parameter-for-the-math-treatments-calculated-in-this-post">Checking the correlation with the protein parameter for the math-treatments calculated in this post</h2>
+<p>Figure&nbsp;5 compares correlation spectra for the four different options we have tried in this post. Visually it is difficult to decide which one can be the best, but they can help us to see where are the wavelength ranges more associated to the protein in this case.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">cor_prot_der1 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, der1_spec)</span>
+<span id="cb8-2"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(der1_spec), <span class="fu" style="color: #4758AB;">t</span>(cor_prot_der1), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"black"</span>, <span class="at" style="color: #657422;">ylim =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="sc" style="color: #5E5E5E;">-</span><span class="fl" style="color: #AD0000;">1.0</span>, <span class="fl" style="color: #AD0000;">1.0</span>))</span>
+<span id="cb8-3"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new =</span> <span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb8-4">cor_prot_snvdt2der1 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, snvdt2der1_spec)</span>
+<span id="cb8-5"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(snvdt2der1_spec), <span class="fu" style="color: #4758AB;">t</span>(cor_prot_snvdt2der1), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>, <span class="at" style="color: #657422;">ylim =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="sc" style="color: #5E5E5E;">-</span><span class="fl" style="color: #AD0000;">1.0</span>, <span class="fl" style="color: #AD0000;">1.0</span>))</span>
+<span id="cb8-6"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new =</span> <span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb8-7">cor_prot_der2 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, der2_spec)</span>
+<span id="cb8-8"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(der2_spec), <span class="fu" style="color: #4758AB;">t</span>(cor_prot_der2), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"blue"</span>, <span class="at" style="color: #657422;">ylim =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="sc" style="color: #5E5E5E;">-</span><span class="fl" style="color: #AD0000;">1.0</span>, <span class="fl" style="color: #AD0000;">1.0</span>))</span>
+<span id="cb8-9"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">new =</span> <span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb8-10">cor_prot_snvdt2der2 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, snvdt2der2_spec)</span>
+<span id="cb8-11"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(snvdt2der2_spec), <span class="fu" style="color: #4758AB;">t</span>(cor_prot_snvdt2der2), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">" "</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"green"</span>, <span class="at" style="color: #657422;">ylim =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="sc" style="color: #5E5E5E;">-</span><span class="fl" style="color: #AD0000;">1.0</span>, <span class="fl" style="color: #AD0000;">1.0</span>))</span>
+<span id="cb8-12"></span>
+<span id="cb8-13"></span>
+<span id="cb8-14"><span class="fu" style="color: #4758AB;">legend</span>(<span class="st" style="color: #20794D;">"topleft"</span>, <span class="at" style="color: #657422;">legend =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"1st Der"</span>, <span class="st" style="color: #20794D;">"SNVDT2+1Der"</span>, <span class="st" style="color: #20794D;">"2nd Der"</span>, <span class="st" style="color: #20794D;">"SNVDT2+2Der"</span> ),</span>
+<span id="cb8-15">       <span class="at" style="color: #657422;">lty =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">col =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"black"</span>, <span class="st" style="color: #20794D;">"red"</span>, <span class="st" style="color: #20794D;">"blue"</span>, <span class="st" style="color: #20794D;">"green"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-correlations1_prot" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-correlations1_prot-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 5: SNVDT2 and SNVDT2 + Second Derivative compared</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout-tip callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Let´s do it with ggplot2
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>We have already load tidyverse library at the beginning</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">cor_prot_with_der <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">as.data.frame</span>(<span class="fu" style="color: #4758AB;">rbind</span>(cor_prot_der1, cor_prot_snvdt2der1,                                                 cor_prot_der2, cor_prot_snvdt2der2))</span>
+<span id="cb9-2"></span>
+<span id="cb9-3"><span class="co" style="color: #5E5E5E;">#replace all NA values with zero</span></span>
+<span id="cb9-4">cor_prot_with_der <span class="ot" style="color: #003B4F;">&lt;-</span> cor_prot_with_der <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb9-5">                        <span class="fu" style="color: #4758AB;">replace</span>(<span class="fu" style="color: #4758AB;">is.na</span>(.), <span class="dv" style="color: #AD0000;">0</span>)</span>
+<span id="cb9-6"></span>
+<span id="cb9-7">cor_prot_with_dt <span class="ot" style="color: #003B4F;">&lt;-</span> cor_prot_with_der <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb9-8">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">Mat_treatment =</span> <span class="fu" style="color: #4758AB;">as.factor</span>(<span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"1ª Der"</span>, <span class="st" style="color: #20794D;">"SNVDT2 + 1ª Der"</span>,</span>
+<span id="cb9-9">                                     <span class="st" style="color: #20794D;">"2ª Der"</span>, <span class="st" style="color: #20794D;">"SNVDT2 + 2ª Der"</span>)))</span>
+<span id="cb9-10"></span>
+<span id="cb9-11"></span>
+<span id="cb9-12">cor_prot_with_dt <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb9-13">  <span class="fu" style="color: #4758AB;">pivot_longer</span>(<span class="at" style="color: #657422;">cols =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">100</span>), <span class="at" style="color: #657422;">names_to =</span> <span class="st" style="color: #20794D;">"Wavelength"</span>, <span class="at" style="color: #657422;">values_to =</span> <span class="st" style="color: #20794D;">"Correlation"</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb9-14">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">Wavelength =</span> <span class="fu" style="color: #4758AB;">as.integer</span>(Wavelength)) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb9-15">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> Wavelength, <span class="at" style="color: #657422;">y =</span> Correlation, <span class="at" style="color: #657422;">group =</span> Mat_treatment, <span class="at" style="color: #657422;">col =</span> Mat_treatment)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb9-16">  <span class="fu" style="color: #4758AB;">geom_line</span>(<span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>Let´s see in a diagram what we have seen until this post</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<p>
+</p><pre class="mermaid" data-tooltip-selector="#mermaid-tooltip-1">flowchart LR
+  A[Raw Spectra] --&gt; B(SNV)
+  A --&gt; C(Detrend only)
+  A --&gt; D[SNV &amp; linear Detrend]
+  A --&gt; E[SNV &amp; Quadratic Detrend]
+  D --&gt; F[First Derivative]
+  D --&gt; G[Second Derivative]
+  A --&gt; H[MSC]
+  A --&gt; I[First Derivative]
+  A --&gt; J[Second Derivative]
+  
+</pre>
+<div id="mermaid-tooltip-1" class="mermaidTooltip">
+
+</div>
+<p></p>
+</div>
+</div>
+</div>
+<p>We have several options now to develop models and see which one gives the better statistics, of course there are more math treatments we can try but we stop in this tutorial with the derivatives and in the next ones we will check the different options to find outliers.</p>
+<p>Finally we add the new math treatments to the tecator database to use it in the coming posts:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">tecator<span class="sc" style="color: #5E5E5E;">$</span>der1_spec <span class="ot" style="color: #003B4F;">&lt;-</span> der1_spec</span>
+<span id="cb10-2">tecator<span class="sc" style="color: #5E5E5E;">$</span>der2_spec <span class="ot" style="color: #003B4F;">&lt;-</span> der2_spec</span>
+<span id="cb10-3">tecator<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der1_spec <span class="ot" style="color: #003B4F;">&lt;-</span> snvdt2der1_spec</span>
+<span id="cb10-4">tecator<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der2_spec <span class="ot" style="color: #003B4F;">&lt;-</span> snvdt2der2_spec</span></code></pre></div>
+</div>
+<p>and save the dataframe for future use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws7.RData"</span>)</span></code></pre></div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <category>Removing scatter</category>
+  <category>Math-treatments</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7.html</guid>
+  <pubDate>Tue, 18 Oct 2022 22:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/cor_spectra_der.jpeg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>Near Infrared Transmitance Tutorial (part 6)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_6/NIR_tutotial_6.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="organizing-data" class="level2">
+<h2 class="anchored" data-anchor-id="organizing-data">Organizing data</h2>
+<p>First we load the work we have done until now:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws5.RData"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">ls</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "absorp"             "absorp_msc"         "absorp_snv"        
+ [4] "cor_rawspec"        "cor_snvspec"        "cor_snvspec_fat"   
+ [7] "cor_snvspec_moi"    "cor_snvspec_prot"   "endpoints"         
+[10] "meats"              "meats_longer"       "tec_prot_test"     
+[13] "tec_prot_test_msc"  "tec_prot_train"     "tec_prot_train_msc"
+[16] "tecator"            "tecator_split"     </code></pre>
+</div>
+</div>
+<p>We can remove some files we have use for some visualization: it is important to maintain the dataframes we will use for the model development with different math treatments and the raw spectra.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">rm</span>(cor_rawspec_fat,cor_rawspec_moi, cor_rawspec_prot,</span>
+<span id="cb3-2">   cor_snvspec_fat, cor_snvspec_moi, cor_snvspec_prot)</span></code></pre></div>
+</div>
+<p>Resuming what we have in th tecator dataframe:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">names</span>(tecator)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "SampleID" "Moisture" "Fat"      "Protein"  "spec"     "snv_spec"</code></pre>
+</div>
+</div>
+<p>As we can see we have the Sample ID, the parameters with the laboratory values for moisture, fat and protein, and the spectra without treatment (raw) and with the SNV treatment. At the moment we take apart the MSC math treatment , we have calculated in the previous post, and keep it for future use.</p>
+</section>
+<section id="detrend-math-treatment" class="level2">
+<h2 class="anchored" data-anchor-id="detrend-math-treatment">DETREND math treatment</h2>
+<p>With the detrend we want to remove the linear trend caused normally by the scatter. This shift is no so obvious in the wavelength range we are using in this tutorial, but when using NIR spectra range (1100 - 2500 nm) the shift increase quite a lot and can be linear or quadratic depending on the type of sample or sample presentation. Detrend normally is combined with SNV, and this combination is in the list of some of the commercial software available for NIR or NIT instruments. The math treatments we can see in this post are:</p>
+<ul>
+<li><p>Detrend linear only</p></li>
+<li><p>SNV and linear detrend</p></li>
+<li><p>SNV and quadratic detrend</p></li>
+</ul>
+</section>
+<section id="detrend-only-linear" class="level2">
+<h2 class="anchored" data-anchor-id="detrend-only-linear">Detrend only (linear)</h2>
+<p>We will use the {pracma} library and the function “detrend”.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">library</span>(pracma)</span></code></pre></div>
+</div>
+<p>Let´s apply the function to the raw spectra, and see the result:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">dt_spec <span class="ot" style="color: #003B4F;">&lt;-</span> pracma<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">detrend</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>spec)</span>
+<span id="cb7-2"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">mfrow=</span><span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">2</span>))</span>
+<span id="cb7-3"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>spec), <span class="fu" style="color: #4758AB;">t</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Raw spectra"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"grey"</span>)</span>
+<span id="cb7-4"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(dt_spec), <span class="fu" style="color: #4758AB;">t</span>(dt_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Only linear detrend"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"blue"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-Raw_DTonly" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_6/NIR_tutotial_6_files/figure-html/fig-Raw_DTonly-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: Raw vs.&nbsp;Detrend only spectra</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>in the figure we compare the spectra without any treatment (left) with the spectra with the linear detrend, and we can see how the spectra become flatter due to the trend removal, but the result can be improved with some normalization to remove the baseline shift, so for that reason we use the detrend and SNV combined.</p>
+</section>
+<section id="snv-and-linear-detrend" class="level2">
+<h2 class="anchored" data-anchor-id="snv-and-linear-detrend">SNV and linear detrend</h2>
+<p>In this case we will use another library {prospectr} , using p = 1 to remove the linear trend.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;">library</span>(prospectr)</span>
+<span id="cb8-2">snvdt1_spec <span class="ot" style="color: #003B4F;">&lt;-</span> prospectr<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">detrend</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>spec, </span>
+<span id="cb8-3">                                  <span class="at" style="color: #657422;">wav =</span> <span class="fu" style="color: #4758AB;">as.numeric</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>spec)),</span>
+<span id="cb8-4">                                  <span class="at" style="color: #657422;">p =</span> <span class="dv" style="color: #AD0000;">1</span>) </span></code></pre></div>
+</div>
+<p>Now we can compare the result with the raw spectra</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">mfrow=</span><span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">2</span>))</span>
+<span id="cb9-2"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>spec), <span class="fu" style="color: #4758AB;">t</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Raw spectra"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"grey"</span>)</span>
+<span id="cb9-3"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(snvdt1_spec), <span class="fu" style="color: #4758AB;">t</span>(snvdt1_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"SNV and Linear Detrend"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"blue"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-Raw_SNVDT1" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_6/NIR_tutotial_6_files/figure-html/fig-Raw_SNVDT1-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: Raw vs.&nbsp;SNV+DT1</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As we can see there is an improvement in the result. We can see if the change from p = 1 to p = 2 make some differences:</p>
+</section>
+<section id="snv-and-quadratic-detrend" class="level2">
+<h2 class="anchored" data-anchor-id="snv-and-quadratic-detrend">SNV and quadratic detrend</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">snvdt2_spec <span class="ot" style="color: #003B4F;">&lt;-</span> prospectr<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">detrend</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>spec, </span>
+<span id="cb10-2">                                  <span class="at" style="color: #657422;">wav =</span> <span class="fu" style="color: #4758AB;">as.numeric</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>spec)),</span>
+<span id="cb10-3">                                  <span class="at" style="color: #657422;">p =</span> <span class="dv" style="color: #AD0000;">2</span>) </span></code></pre></div>
+</div>
+<p>Now we can compare the result with the raw spectra and linear detrend spectra.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">mfrow=</span><span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">3</span>))</span>
+<span id="cb11-2"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>spec), <span class="fu" style="color: #4758AB;">t</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Raw spectra"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"grey"</span>)</span>
+<span id="cb11-3"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(snvdt1_spec), <span class="fu" style="color: #4758AB;">t</span>(snvdt1_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"SNV and Linear Detrend"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"blue"</span>)</span>
+<span id="cb11-4"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(snvdt2_spec), <span class="fu" style="color: #4758AB;">t</span>(snvdt2_spec), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"SNV and Quadratic Detrend"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"blue"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-Raw_SNVDT2" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_6/NIR_tutotial_6_files/figure-html/fig-Raw_SNVDT2-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 3: Raw vs.&nbsp;SNV+DT1 and SNV+DT2</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="detrend-correlations-with-protein-depending-on-type" class="level2">
+<h2 class="anchored" data-anchor-id="detrend-correlations-with-protein-depending-on-type">Detrend correlations with Protein depending on type</h2>
+<p>Let´s check the correlations for the different math treatment combinations using detrend to get some conclusions.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1">cor_prot_dt <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, dt_spec)</span>
+<span id="cb12-2">cor_prot_snvdt1 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, snvdt1_spec)</span>
+<span id="cb12-3">cor_prot_snvdt2 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, snvdt2_spec)</span>
+<span id="cb12-4"></span>
+<span id="cb12-5">cor_prot_with_dt <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">as.data.frame</span>(<span class="fu" style="color: #4758AB;">rbind</span>(cor_prot_dt, cor_prot_snvdt1, cor_prot_snvdt2))</span>
+<span id="cb12-6"></span>
+<span id="cb12-7"><span class="fu" style="color: #4758AB;">library</span>(tidyverse)</span>
+<span id="cb12-8"></span>
+<span id="cb12-9">cor_prot_with_dt <span class="ot" style="color: #003B4F;">&lt;-</span> cor_prot_with_dt <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb12-10">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">Mat_treatment =</span> <span class="fu" style="color: #4758AB;">as.factor</span>(<span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"DT"</span>, <span class="st" style="color: #20794D;">"SNV+DT1"</span>, <span class="st" style="color: #20794D;">"SNV+DT2"</span>)))</span>
+<span id="cb12-11"></span>
+<span id="cb12-12"></span>
+<span id="cb12-13">cor_prot_with_dt <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb12-14">  <span class="fu" style="color: #4758AB;">pivot_longer</span>(<span class="at" style="color: #657422;">cols =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">100</span>), <span class="at" style="color: #657422;">names_to =</span> <span class="st" style="color: #20794D;">"Wavelength"</span>, <span class="at" style="color: #657422;">values_to =</span> <span class="st" style="color: #20794D;">"Correlation"</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb12-15">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">Wavelength =</span> <span class="fu" style="color: #4758AB;">as.integer</span>(Wavelength)) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb12-16">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> Wavelength, <span class="at" style="color: #657422;">y =</span> Correlation, <span class="at" style="color: #657422;">group =</span> Mat_treatment, <span class="at" style="color: #657422;">col =</span> Mat_treatment)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb12-17">  <span class="fu" style="color: #4758AB;">geom_line</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-Proteincor_dts" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_6/NIR_tutotial_6_files/figure-html/fig-Proteincor_dts-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 4: Wavelength correlation with protein for the different Detrend treatments</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As we can see it seems that there are an improvement in the correlation when using Quadratic Detrend combined with SNV. Anyway we wiil see during the models developments if the statistics confirm this.</p>
+<p>We can add all these three new math-treatments to the tecator dataframe for future use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1">tecator<span class="sc" style="color: #5E5E5E;">$</span>dt_spec <span class="ot" style="color: #003B4F;">&lt;-</span> dt_spec</span>
+<span id="cb13-2">tecator<span class="sc" style="color: #5E5E5E;">$</span>snvdt1_spec <span class="ot" style="color: #003B4F;">&lt;-</span> snvdt1_spec</span>
+<span id="cb13-3">tecator<span class="sc" style="color: #5E5E5E;">$</span>sndt2_spec <span class="ot" style="color: #003B4F;">&lt;-</span> snvdt2_spec</span></code></pre></div>
+</div>
+<p>Let´s save the workspace</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws6.RData"</span>)</span></code></pre></div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <category>Removing scatter</category>
+  <category>Math-treatments</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_6/NIR_tutotial_6.html</guid>
+  <pubDate>Thu, 13 Oct 2022 22:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_6/Raw_vs_SNVDT1_SNVDT2.jpeg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>Near Infrared Transmitance Tutorial (part 5)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_5/NIT_tutorial_5.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="organizing-data" class="level2">
+<h2 class="anchored" data-anchor-id="organizing-data">Organizing data</h2>
+<p>As always load the previous workspace:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws4.RData"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">ls</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "absorp"           "absorp_snv"       "cor_rawspec"      "cor_snvspec"     
+ [5] "cor_snvspec_fat"  "cor_snvspec_moi"  "cor_snvspec_prot" "endpoints"       
+ [9] "meats"            "meats_longer"     "tecator"         </code></pre>
+</div>
+</div>
+<p>We need in this post these libraries</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">library</span>(pls)</span>
+<span id="cb3-2"><span class="fu" style="color: #4758AB;">library</span>(tidymodels)</span></code></pre></div>
+</div>
+</section>
+<section id="multiple-scatter-correction-msc" class="level2">
+<h2 class="anchored" data-anchor-id="multiple-scatter-correction-msc">Multiple Scatter Correction (MSC)</h2>
+<p>We use the function <strong>msc</strong> from the <strong>pls</strong> package</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">absorp_msc <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">msc</span>(absorp)</span></code></pre></div>
+</div>
+<p>This is a very simple step, and we can see the result and compare it with SNV.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">mfrow=</span><span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">2</span>))</span>
+<span id="cb5-2"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(absorp_msc), <span class="fu" style="color: #4758AB;">t</span>(absorp_msc), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"MSC spectra"</span>)</span>
+<span id="cb5-3"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(absorp_snv), <span class="fu" style="color: #4758AB;">t</span>(absorp_snv), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"SNV spectra"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-snv_vs_msc" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_5/NIT_tutorial_5_files/figure-html/fig-snv_vs_msc-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: MSC vs.&nbsp;SNV</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>as we can see they are quite similar if we don´t take into account that the SNV is centered. SNV and MSC have very different calculations:</p>
+<ul>
+<li><p>SNV use independently every spectrum calculating the mean and the standard deviation of the spectrum data points and use them in the calculation.</p></li>
+<li><p>MSC calculate the mean spectrum and use it to calculate the slope (b) and intercept (a) with a linear regression to every particular spectrum, and after that use “a” and “b” to correct that particular spectrum. A new a and b are calculated for the next spectrum using again the mean spectrum and the new spectrum in the regression.</p></li>
+</ul>
+</section>
+<section id="split-data-into-training-a-validation" class="level2">
+<h2 class="anchored" data-anchor-id="split-data-into-training-a-validation">Split data into training a validation</h2>
+<p>This point is a good occasion to split the data into a training ans a test set. There are several ways to do it, but let´s use tidymodels this time:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">set.seed</span>(<span class="dv" style="color: #AD0000;">1234</span>)</span>
+<span id="cb6-2">tecator_split <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">initial_split</span>(tecator, <span class="at" style="color: #657422;">prop =</span> <span class="dv" style="color: #AD0000;">3</span><span class="sc" style="color: #5E5E5E;">/</span><span class="dv" style="color: #AD0000;">4</span>, <span class="at" style="color: #657422;">strata =</span> Protein)</span></code></pre></div>
+</div>
+<p>We have selected as strata the parameter protein, because it is the first model that we will develop.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">tec_prot_train <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">training</span>(tecator_split)</span>
+<span id="cb7-2">tec_prot_test <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">testing</span>(tecator_split)</span></code></pre></div>
+</div>
+<p>Now we have two sets (training and test), and we will continue working with the training set, hiding the test set until we use it for the final validation. But before to hide the test set we will use it this time to explain the process to apply math treatments to the test set. Let´s apply the MSC math treatment again, but this time only to the training set:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">tec_prot_train_msc <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">msc</span>(tec_prot_train<span class="sc" style="color: #5E5E5E;">$</span>spec)</span></code></pre></div>
+</div>
+</section>
+<section id="apply-msc-to-the-test-set" class="level2">
+<h2 class="anchored" data-anchor-id="apply-msc-to-the-test-set">Apply MSC to the test set</h2>
+<p>The mean train spectrum is keep as reference, and now we can apply the MSC to the test set:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">tec_prot_test_msc <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">predict</span>(tec_prot_train_msc, <span class="at" style="color: #657422;">newdata =</span> tec_prot_test<span class="sc" style="color: #5E5E5E;">$</span>spec)</span></code></pre></div>
+</div>
+<p>Let´s compare the two sets:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">mfrow=</span><span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">2</span>))</span>
+<span id="cb10-2"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tec_prot_train_msc), <span class="fu" style="color: #4758AB;">t</span>(tec_prot_train_msc), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"MSC training set"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"blue"</span>)</span>
+<span id="cb10-3"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(tec_prot_test_msc), <span class="fu" style="color: #4758AB;">t</span>(tec_prot_test_msc), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelengths (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"MSC test set"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"green"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-MSC_train_test" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_5/NIT_tutorial_5_files/figure-html/fig-MSC_train_test-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: Training and Test sets math treated with MSC</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Now we can save these values in their respective dataframes:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1">tec_prot_train<span class="sc" style="color: #5E5E5E;">$</span>msc_spec <span class="ot" style="color: #003B4F;">&lt;-</span> tec_prot_train_msc</span>
+<span id="cb11-2">tec_prot_test<span class="sc" style="color: #5E5E5E;">$</span>msc_spec <span class="ot" style="color: #003B4F;">&lt;-</span> tec_prot_test_msc</span></code></pre></div>
+</div>
+<p>and save the workspace:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws5.RData"</span>)</span></code></pre></div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <category>Removing scatter</category>
+  <category>Math-treatments</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_5/NIT_tutorial_5.html</guid>
+  <pubDate>Tue, 04 Oct 2022 22:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_5/MSC_spectra.jpeg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>Near Infrared Transmitance Tutorial (part 4)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_4/NIT_tutorial_4.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="organizing-data" class="level2">
+<h2 class="anchored" data-anchor-id="organizing-data">Organizing data</h2>
+<p>Let´s see what we have in the workspace from the previous posts:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws3.RData"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">ls</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "absorp"           "cor_rawspec"      "cor_rawspec_fat"  "cor_rawspec_moi" 
+[5] "cor_rawspec_prot" "endpoints"        "meats"            "meats_longer"    
+[9] "tecator"         </code></pre>
+</div>
+</div>
+<p>We can remove some objects we don´t need</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">rm</span>(<span class="st" style="color: #20794D;">"cor_rawspec_fat"</span>, <span class="st" style="color: #20794D;">"cor_rawspec_moi"</span>, <span class="st" style="color: #20794D;">"cor_rawspec_prot"</span>)</span></code></pre></div>
+</div>
+<p>Now we load the libraries we will use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">library</span>(tidyverse)</span></code></pre></div>
+</div>
+</section>
+<section id="scatter-correction-math-treatments" class="level2">
+<h2 class="anchored" data-anchor-id="scatter-correction-math-treatments">Scatter correction math-treatments</h2>
+<p>The idea now is to apply some math treatments to the raw spectra and check which one improves the correlation with the parameters of interest. Normally there are some common scatter removal algorithms that I use:</p>
+<ul>
+<li><p>Standard Normal Variate (SNV)</p></li>
+<li><p>Detrend (linear or quadratic)</p></li>
+<li><p>SNV + Detrend (linear or quadratic)</p></li>
+<li><p>Multiple Scatter Correction</p></li>
+</ul>
+<p>There are some packages in R which have these math treatment with this name or a similar one, or we can create functions to apply these algorithms to the spectra matrix.</p>
+</section>
+<section id="standard-normal-variate-snv" class="level2">
+<h2 class="anchored" data-anchor-id="standard-normal-variate-snv">Standard Normal Variate (SNV)</h2>
+<p>Let´s start using SNV, where we center every spectrum (subtracting the mean) and scale it (dividing by the standard deviation):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;">#The algorithm is applied to the columns, so we transpose the matrix</span></span>
+<span id="cb5-2">absorp_snv <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">scale</span>(<span class="fu" style="color: #4758AB;">t</span>(absorp), <span class="at" style="color: #657422;">center =</span> <span class="cn" style="color: #8f5902;">TRUE</span>, <span class="at" style="color: #657422;">scale =</span> <span class="cn" style="color: #8f5902;">TRUE</span>)</span>
+<span id="cb5-3"><span class="co" style="color: #5E5E5E;">#Let´s convert the corrected matrix as usual</span></span>
+<span id="cb5-4">absorp_snv <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">t</span>(absorp_snv)</span>
+<span id="cb5-5"></span>
+<span id="cb5-6"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(absorp_snv), <span class="fu" style="color: #4758AB;">t</span>(absorp_snv), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"Wavelength (nm)"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"SNV Meat Spectra"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-snv" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_4/NIT_tutorial_4_files/figure-html/fig-snv-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: Meat spectra treated with SNV.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can add the matrix treated with the SNV math treatment to the tecator dataframe</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">tecator<span class="sc" style="color: #5E5E5E;">$</span>snv_spec <span class="ot" style="color: #003B4F;">&lt;-</span> absorp_snv</span></code></pre></div>
+</div>
+</section>
+<section id="correlation-between-outcomes-and-predictors-with-snv" class="level2">
+<h2 class="anchored" data-anchor-id="correlation-between-outcomes-and-predictors-with-snv">Correlation between outcomes and predictors (with SNV)</h2>
+<p>Now we can see if the correlation is improved</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">cor_snvspec_moi <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Moisture, tecator<span class="sc" style="color: #5E5E5E;">$</span>snv_spec)</span>
+<span id="cb7-2">cor_snvspec_fat <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Fat, tecator<span class="sc" style="color: #5E5E5E;">$</span>snv_spec)</span>
+<span id="cb7-3">cor_snvspec_prot <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, tecator<span class="sc" style="color: #5E5E5E;">$</span>snv_spec)</span>
+<span id="cb7-4"></span>
+<span id="cb7-5">cor_snvspec <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">as.data.frame</span>(<span class="fu" style="color: #4758AB;">rbind</span>(cor_snvspec_moi, cor_snvspec_fat, cor_snvspec_prot))</span>
+<span id="cb7-6"></span>
+<span id="cb7-7">cor_snvspec <span class="ot" style="color: #003B4F;">&lt;-</span> cor_snvspec <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb7-8">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">Parameter =</span> <span class="fu" style="color: #4758AB;">as.factor</span>(<span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"Moisture"</span>, <span class="st" style="color: #20794D;">"Fat"</span>, <span class="st" style="color: #20794D;">"Protein"</span>)))</span>
+<span id="cb7-9"></span>
+<span id="cb7-10">cor_snvspec <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb7-11">  <span class="fu" style="color: #4758AB;">pivot_longer</span>(<span class="at" style="color: #657422;">cols =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">100</span>), <span class="at" style="color: #657422;">names_to =</span> <span class="st" style="color: #20794D;">"Wavelength"</span>, <span class="at" style="color: #657422;">values_to =</span> <span class="st" style="color: #20794D;">"Correlation"</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb7-12">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">Wavelength =</span> <span class="fu" style="color: #4758AB;">as.integer</span>(Wavelength)) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb7-13">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> Wavelength, <span class="at" style="color: #657422;">y =</span> Correlation, <span class="at" style="color: #657422;">group =</span> Parameter, <span class="at" style="color: #657422;">col =</span> Parameter)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb7-14">  <span class="fu" style="color: #4758AB;">geom_line</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-cor_snv" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_4/NIT_tutorial_4_files/figure-html/fig-cor_snv-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: Correlation SNV signal with the parametes.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Now, apart from the better correlation we can see an improvement in the definition of the correlations (positives and negatives), and the correlation spectra confirm what we have seen in the correlation between the parameters.</p>
+<p>As always save the workspace for future use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws4.RData"</span>)</span></code></pre></div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <category>Removing scatter</category>
+  <category>Math-treatments</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_4/NIT_tutorial_4.html</guid>
+  <pubDate>Sun, 02 Oct 2022 22:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_4/SNV_math_treated.jpeg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>Near Infrared Transmitance Tutorial (part 3)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_3/NIT_tutorial_3.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="organizing-data" class="level2">
+<h2 class="anchored" data-anchor-id="organizing-data">Organizing data</h2>
+<p>Let´s start loading the libraries we are going to use in this post and the workspace from the previous post.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(tidyverse)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(corrplot)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws2.RData"</span>)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;">ls</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "absorp"       "endpoints"    "meats"        "meats_longer" "tecator"     </code></pre>
+</div>
+</div>
+</section>
+<section id="correlation-between-the-parameters-outcomes" class="level2">
+<h2 class="anchored" data-anchor-id="correlation-between-the-parameters-outcomes">Correlation between the parameters (outcomes)</h2>
+<p>It is important to check the correlation between the outcomes variables (Moisture, Fat and Protein in this case). As we remember the outcomes are in the “endpoints” matrix.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">endpoints <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb3-2">  <span class="fu" style="color: #4758AB;">cor</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           Moisture        Fat    Protein
+Moisture  1.0000000 -0.9881002  0.8145212
+Fat      -0.9881002  1.0000000 -0.8608965
+Protein   0.8145212 -0.8608965  1.0000000</code></pre>
+</div>
+</div>
+<p>The correlation matrix show how the are high correlations between the three parameters, but we can use graphics to see it more clearly:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;">corrplot</span>(<span class="fu" style="color: #4758AB;">cor</span>(endpoints), <span class="at" style="color: #657422;">method =</span> <span class="st" style="color: #20794D;">"ellipse"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-cor_params" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_3/NIT_tutorial_3_files/figure-html/fig-cor_params-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: Inter-correlation between parameters.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>But to check better the trends and the possible outliers, we can use the function “pairs</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">pairs</span>(endpoints)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-params_cor" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_3/NIT_tutorial_3_files/figure-html/fig-params_cor-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: Parameters inter-correlation</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>This way we can see at least six outliers that seems to have some bias versus the linear trend. What are the reason for these outliers? (samples different from the rest, different reference method, bias in the reference method,…). We will try to see along the tutorial.</p>
+</section>
+<section id="correlation-between-the-wavelengths-predictors" class="level2">
+<h2 class="anchored" data-anchor-id="correlation-between-the-wavelengths-predictors">Correlation between the wavelengths (predictors)</h2>
+<p>It is known that the NIR or NIT predictor variables are highly correlated, due that we are working with overtones and combination bands, so the correlation matrix in this case show high correlation between all the variables, due to we are in the third overtone and working with very broad bands.For this reason we have to apply math treatments to the spectra to remove the scatter effect and derivatives to improve the resolution of the bands. The correlation between predictors is a long matrix (100.100), so the best way to see it it is graphically. By now we see the correlation matrix of the raw spectra (without any math treatment)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;">corrplot</span>(<span class="fu" style="color: #4758AB;">cor</span>(absorp), <span class="at" style="color: #657422;">method =</span> <span class="st" style="color: #20794D;">"circle"</span>, <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"upper"</span>, <span class="at" style="color: #657422;">tl.cex =</span> <span class="fl" style="color: #AD0000;">0.5</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-spec_collinearity" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_3/NIT_tutorial_3_files/figure-html/fig-spec_collinearity-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 3: Spectra collinearity.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="correlation-between-outcomes-and-predictors" class="level2">
+<h2 class="anchored" data-anchor-id="correlation-between-outcomes-and-predictors">Correlation between outcomes and predictors</h2>
+<p>Another point is how the variation in the predictors matrix correlates with the variation of the outcomes. What we do is to see which wavelengths correlate better with a certain parameter getting three correlation spectra (one for every parameter).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">cor_rawspec_moi <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Moisture, tecator<span class="sc" style="color: #5E5E5E;">$</span>spec)</span>
+<span id="cb8-2">cor_rawspec_fat <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Fat, tecator<span class="sc" style="color: #5E5E5E;">$</span>spec)</span>
+<span id="cb8-3">cor_rawspec_prot <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cor</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>Protein, tecator<span class="sc" style="color: #5E5E5E;">$</span>spec)</span>
+<span id="cb8-4"></span>
+<span id="cb8-5">cor_rawspec <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">as.data.frame</span>(<span class="fu" style="color: #4758AB;">rbind</span>(cor_rawspec_moi, cor_rawspec_fat, cor_rawspec_prot))</span>
+<span id="cb8-6">cor_rawspec <span class="ot" style="color: #003B4F;">&lt;-</span> cor_rawspec <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb8-7">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">Parameter =</span> <span class="fu" style="color: #4758AB;">as.factor</span>(<span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"Moisture"</span>, <span class="st" style="color: #20794D;">"Fat"</span>, <span class="st" style="color: #20794D;">"Protein"</span>)))</span>
+<span id="cb8-8"></span>
+<span id="cb8-9">cor_rawspec <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb8-10">  <span class="fu" style="color: #4758AB;">pivot_longer</span>(<span class="at" style="color: #657422;">cols =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">100</span>), <span class="at" style="color: #657422;">names_to =</span> <span class="st" style="color: #20794D;">"Wavelength"</span>, <span class="at" style="color: #657422;">values_to =</span> <span class="st" style="color: #20794D;">"Correlation"</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb8-11">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">Wavelength =</span> <span class="fu" style="color: #4758AB;">as.integer</span>(Wavelength)) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb8-12">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> Wavelength, <span class="at" style="color: #657422;">y =</span> Correlation, <span class="at" style="color: #657422;">group =</span> Parameter, <span class="at" style="color: #657422;">col =</span> Parameter)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb8-13">  <span class="fu" style="color: #4758AB;">geom_line</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-cor_wavel_params" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_3/NIT_tutorial_3_files/figure-html/fig-cor_wavel_params-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 4: Correlation absorbance vs.&nbsp;parameters.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As we can see there are no wavelengths with high correlations, and if we would auto-scale every correlation spectrum, the spectrum would seem as a meat sample spectra (for moisture and protein inverted). All this is due to the scatter physical effects. So, with some math treatments to remove it the correlation will improve. Anyway, in the third overtone due to the bands overlapping, we would need a multivariate calibration with all or almost all the wavelengths.</p>
+<p>As always save the workspace for future use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws3.RData"</span>)</span></code></pre></div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <category>Collinearity</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_3/NIT_tutorial_3.html</guid>
+  <pubDate>Wed, 28 Sep 2022 22:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_3/cor_parameters.jpeg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>Near Infrared Transmitance Tutorial (part 2)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_2/NIT_tutorial_2.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="organizing-data" class="level2">
+<h2 class="anchored" data-anchor-id="organizing-data">Organizing data</h2>
+<p>First we load the libraries we are going to use, and the “workspace” from the previous post:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(tidyverse)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(modeldata)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws1.RData"</span>)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;">ls</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "absorp"    "endpoints" "tecator"  </code></pre>
+</div>
+</div>
+<p>Now we can create another field called “SampleID” as a sequence from 1 to 215 (number of samples), it will be very usefull whenever we use the tecator dataframe:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">tecator <span class="ot" style="color: #003B4F;">&lt;-</span> tecator <span class="sc" style="color: #5E5E5E;">%&gt;%</span>   </span>
+<span id="cb3-2">  <span class="fu" style="color: #4758AB;">rowid_to_column</span>(<span class="at" style="color: #657422;">var =</span> <span class="st" style="color: #20794D;">"SampleID"</span>) </span></code></pre></div>
+</div>
+<p>The tecator data is available as well in the library “modeldata”, but with the name “meats”, so we can load it into the workspace and work with it using the tidyverse and tidymodels libraries. The idea of this tutorial is getting use to work with tidyverse and tidymodels at the same time that with classic R.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">data</span>(meats)</span></code></pre></div>
+</div>
+<p>The first 100 columns are the wavelengths are the datapoints and the last 3 the parameters, so we can rename de column names, and add an extra column called “SampleID” (same as row number).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;">colnames</span>(meats) <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="fu" style="color: #4758AB;">seq</span>(<span class="dv" style="color: #AD0000;">850</span>, <span class="dv" style="color: #AD0000;">1048</span>, <span class="at" style="color: #657422;">by =</span> <span class="dv" style="color: #AD0000;">2</span>), <span class="st" style="color: #20794D;">"Moisture"</span>, <span class="st" style="color: #20794D;">"Fat"</span>, <span class="st" style="color: #20794D;">"Protein"</span>)</span>
+<span id="cb5-2"></span>
+<span id="cb5-3">meats <span class="ot" style="color: #003B4F;">&lt;-</span> </span>
+<span id="cb5-4">  meats  <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb5-5">  <span class="fu" style="color: #4758AB;">rowid_to_column</span>(<span class="at" style="color: #657422;">var =</span> <span class="st" style="color: #20794D;">"SampleID"</span>)</span></code></pre></div>
+</div>
+</section>
+<section id="histograms-with-ggplot" class="level2">
+<h2 class="anchored" data-anchor-id="histograms-with-ggplot">Histograms with ggplot</h2>
+<p>Now we can see the histograms with ggplot</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">meats <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb6-2">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(Protein)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb6-3">  <span class="fu" style="color: #4758AB;">geom_histogram</span>(<span class="at" style="color: #657422;">bins =</span> <span class="dv" style="color: #AD0000;">20</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb6-4">  <span class="fu" style="color: #4758AB;">ggtitle</span>(<span class="st" style="color: #20794D;">"Protein Meat histogram"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-gghist_prot" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_2/NIT_tutorial_2_files/figure-html/fig-gghist_prot-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: Protein histogram.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can do the same for moisture and fat, but with some code we can see all the histograms at the same time:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">meats <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb7-2">  <span class="fu" style="color: #4758AB;">select</span>(SampleID, Moisture, Fat, Protein) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb7-3">  <span class="fu" style="color: #4758AB;">pivot_longer</span>(<span class="at" style="color: #657422;">cols =</span> Moisture<span class="sc" style="color: #5E5E5E;">:</span>Protein,</span>
+<span id="cb7-4">               <span class="at" style="color: #657422;">names_to =</span> <span class="st" style="color: #20794D;">"Parameter"</span>,</span>
+<span id="cb7-5">               <span class="at" style="color: #657422;">values_to =</span> <span class="st" style="color: #20794D;">"Value"</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb7-6">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">Parameter =</span> <span class="fu" style="color: #4758AB;">as.factor</span>(Parameter)) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb7-7">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(Value)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb7-8">  <span class="fu" style="color: #4758AB;">geom_histogram</span>() <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb7-9">  <span class="fu" style="color: #4758AB;">facet_wrap</span>(<span class="sc" style="color: #5E5E5E;">~</span> Parameter, <span class="at" style="color: #657422;">scales =</span> <span class="st" style="color: #20794D;">"free_x"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+</div>
+<div class="cell-output-display">
+<div id="fig-gghist_all" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_2/NIT_tutorial_2_files/figure-html/fig-gghist_all-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: Parameters histograms.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="lets-see-the-raw-spectra-with-ggplot" class="level2">
+<h2 class="anchored" data-anchor-id="lets-see-the-raw-spectra-with-ggplot">Let´s see the raw spectra with ggplot</h2>
+<p>In order to see the spectra with ggplot we pivot longer meats data grouping by SampleID:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">meats_longer <span class="ot" style="color: #003B4F;">&lt;-</span> </span>
+<span id="cb9-2">  meats  <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb9-3">  <span class="fu" style="color: #4758AB;">pivot_longer</span>(<span class="at" style="color: #657422;">cols =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">2</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">101</span>),</span>
+<span id="cb9-4">               <span class="at" style="color: #657422;">names_to =</span> <span class="st" style="color: #20794D;">"wavelength"</span>,</span>
+<span id="cb9-5">               <span class="at" style="color: #657422;">values_to =</span> <span class="st" style="color: #20794D;">"absorbance"</span>)  <span class="sc" style="color: #5E5E5E;">%&gt;%</span>  </span>
+<span id="cb9-6">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">wavelength =</span> <span class="fu" style="color: #4758AB;">as.integer</span>(<span class="fu" style="color: #4758AB;">str_extract</span>(wavelength, <span class="st" style="color: #20794D;">"[:digit:]+"</span>)))</span></code></pre></div>
+</div>
+<p>Save the workspace for future use</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">meats_longer  <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb10-2">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> wavelength, <span class="at" style="color: #657422;">y =</span> absorbance, <span class="at" style="color: #657422;">group =</span> SampleID)) <span class="sc" style="color: #5E5E5E;">+</span> </span>
+<span id="cb10-3">  <span class="fu" style="color: #4758AB;">geom_line</span>(<span class="at" style="color: #657422;">alpha =</span> <span class="fl" style="color: #AD0000;">0.5</span>) <span class="sc" style="color: #5E5E5E;">+</span> </span>
+<span id="cb10-4">  <span class="fu" style="color: #4758AB;">theme_light</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-ggraw_spec" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_2/NIT_tutorial_2_files/figure-html/fig-ggraw_spec-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 3: Raw spectra with ggplot.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws2.RData"</span>)</span></code></pre></div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_2/NIT_tutorial_2.html</guid>
+  <pubDate>Tue, 27 Sep 2022 22:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_2/raw_meat_spectra.jpeg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>Near Infrared Transmitance Tutorial (part 1)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_1/NIT_tutorial_1.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="loading-and-organizing-data" class="level2">
+<h2 class="anchored" data-anchor-id="loading-and-organizing-data">Loading and organizing data</h2>
+<p>This is the first post about how to work with Near Infrared Transmitance spectra, using the data available in the package Caret and called “tecator”. Just consult the information about this data in R</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(caret)</span></code></pre></div>
+</div>
+<p>When loading tecator, we have two data tables: “absorp” and “endpoints” with the spectra and reference values for the parameters “water”, “fat” and “protein” for the 215 meat samples.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">data</span>(tecator)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;">ls</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "absorp"    "endpoints"</code></pre>
+</div>
+</div>
+<p>The spectra data is in the “absorp” table which is a matrix of 215 rows (number of samples) ,and 100 columns (number of wavelengths ), so we can give names to the columns of “absorp” matrix.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">colnames</span>(absorp) <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">seq</span>(<span class="dv" style="color: #AD0000;">850</span>, <span class="dv" style="color: #AD0000;">1048</span>, <span class="at" style="color: #657422;">by =</span> <span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
+</div>
+<p>We can have a look to the spectra and see its appearance:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">colnames</span>(absorp), <span class="fu" style="color: #4758AB;">t</span>(absorp), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"Absorbance"</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelength (nm)"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Raw meat spectra"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-rawspec" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_1/NIT_tutorial_1_files/figure-html/fig-rawspec-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 1: Raw spectra.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can see the differences in absorbance for every spectra due to the scatter, differences in the pathlength and other physical reasons. This is something we have to work on to remove it and try to see as better as possibles the chemical changes due to the differences in moisture, fat and protein, which are the parameter we want to build models.</p>
+<p>The “endpoints” table has the reference values for the parameters of interest (Moisture, Fat and Protein). It is important to have a look to the parameters distribution, so we can use for this the histogram, but first lets give names to the parameters matrix.</p>
+<p>As we can see we have not coloumn names</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">colnames</span>(endpoints)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NULL</code></pre>
+</div>
+</div>
+<p>So we can give them names:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;">colnames</span>(endpoints) <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"Moisture"</span>, <span class="st" style="color: #20794D;">"Fat"</span>, <span class="st" style="color: #20794D;">"Protein"</span>)</span></code></pre></div>
+</div>
+</section>
+<section id="looking-to-the-parameters-distribution" class="level2">
+<h2 class="anchored" data-anchor-id="looking-to-the-parameters-distribution">Looking to the parameters distribution</h2>
+<p>Let´s see the Moisture histogram</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;">histogram</span>(endpoints[ , <span class="dv" style="color: #AD0000;">1</span>], <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"Moisture content"</span>, <span class="at" style="color: #657422;">main =</span><span class="st" style="color: #20794D;">"Histogram Moisture"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"blue"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-histMoi" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_1/NIT_tutorial_1_files/figure-html/fig-histMoi-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 2: Moisture histogram.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Now the Fat histogram</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;">histogram</span>(endpoints[ , <span class="dv" style="color: #AD0000;">2</span>], <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"Fat content"</span>, <span class="at" style="color: #657422;">main =</span><span class="st" style="color: #20794D;">"Histogram Fat"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"grey"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-histFat" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_1/NIT_tutorial_1_files/figure-html/fig-histFat-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 3: Fat histogram.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>and finally the Protein histogram</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;">histogram</span>(endpoints[ , <span class="dv" style="color: #AD0000;">3</span>], <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"Protein content"</span>, <span class="at" style="color: #657422;">main =</span><span class="st" style="color: #20794D;">"Histogram Protein"</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-histProt" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_1/NIT_tutorial_1_files/figure-html/fig-histProt-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure 4: Protein histogram.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can create a data frame called “tecator” with the “endpoints” and “absorp” matrices</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1">tecator <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">data.frame</span>(endpoints)</span>
+<span id="cb12-2">tecator<span class="sc" style="color: #5E5E5E;">$</span>spec <span class="ot" style="color: #003B4F;">&lt;-</span> absorp</span></code></pre></div>
+</div>
+<p>Now let´s save the dataframe to use in another post:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws1.RData"</span>)</span></code></pre></div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_1/NIT_tutorial_1.html</guid>
+  <pubDate>Sun, 25 Sep 2022 22:00:00 GMT</pubDate>
+</item>
+</channel>
+</rss>

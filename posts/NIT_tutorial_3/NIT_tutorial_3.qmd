@@ -4,7 +4,7 @@ description: "Let´s check the correlation between the outcomes, between the pre
 author: "José Ramón Cuesta"
 image: cor_parameters.jpeg
 date: "2022-09-29"
-categories: [NIT Tutorial, Collinearity]
+categories: [R, NIT Tutorial, Collinearity]
 ---
 
 ## Organizing data
