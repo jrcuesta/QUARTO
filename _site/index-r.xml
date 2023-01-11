@@ -9,8 +9,740 @@
 <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/index.html#category=R</link>
 <atom:link href="https://quartopub.com/sites/jrcuesta/nir-chemometrics/index-r.xml" rel="self" type="application/rss+xml"/>
 <description>Blog about the use of R chemometric tools for NIR spectroscopy</description>
-<generator>quarto-1.0.36</generator>
-<lastBuildDate>Thu, 20 Oct 2022 22:00:00 GMT</lastBuildDate>
+<generator>quarto-1.2.269</generator>
+<lastBuildDate>Sun, 08 Jan 2023 23:00:00 GMT</lastBuildDate>
+<item>
+  <title>PLS - NIT tutorial (part 13)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_13/NIT_tutorial_13.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="splitting-the-data-before-the-calibration." class="level2">
+<h2 class="anchored" data-anchor-id="splitting-the-data-before-the-calibration.">Splitting the data before the calibration.</h2>
+<p>In this post we are going to use the package Caret to develop PLS models for protein, fat and moisture, but first we have to split the data in two sets, one for training and other for testing. Now we load the libraries we need, and the workspace from the previous post.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws12.RData"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(tidymodels)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;">library</span>(caret)</span></code></pre></div>
+</div>
+<p>We did use Caret to split the tecator data in the post NIT_tutorial_5, so we repeat the process again with our last dataframe (from the previous post “tecator2”):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">set.seed</span>(<span class="dv" style="color: #AD0000;">1234</span>)</span>
+<span id="cb2-2">tecator2_split_prot <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">initial_split</span>(tecator2, <span class="at" style="color: #657422;">prop =</span> <span class="dv" style="color: #AD0000;">3</span><span class="sc" style="color: #5E5E5E;">/</span><span class="dv" style="color: #AD0000;">4</span>, <span class="at" style="color: #657422;">strata =</span> Protein)</span>
+<span id="cb2-3">tecator2_split_fat <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">initial_split</span>(tecator2, <span class="at" style="color: #657422;">prop =</span> <span class="dv" style="color: #AD0000;">3</span><span class="sc" style="color: #5E5E5E;">/</span><span class="dv" style="color: #AD0000;">4</span>, <span class="at" style="color: #657422;">strata =</span> Fat)</span>
+<span id="cb2-4">tecator2_split_moi <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">initial_split</span>(tecator2, <span class="at" style="color: #657422;">prop =</span> <span class="dv" style="color: #AD0000;">3</span><span class="sc" style="color: #5E5E5E;">/</span><span class="dv" style="color: #AD0000;">4</span>, <span class="at" style="color: #657422;">strata =</span> Moisture)</span>
+<span id="cb2-5"></span>
+<span id="cb2-6">tec2_prot_train <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">training</span>(tecator2_split_prot)</span>
+<span id="cb2-7">tec2_prot_test <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">testing</span>(tecator2_split_prot)</span>
+<span id="cb2-8"></span>
+<span id="cb2-9">tec2_fat_train <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">training</span>(tecator2_split_fat)</span>
+<span id="cb2-10">tec2_fat_test <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">testing</span>(tecator2_split_fat)</span>
+<span id="cb2-11"></span>
+<span id="cb2-12">tec2_moi_train <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">training</span>(tecator2_split_moi)</span>
+<span id="cb2-13">tec2_moi_test <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">testing</span>(tecator2_split_moi)</span></code></pre></div>
+</div>
+<p>We have done this in a random way, so we expect that some of the mahalanobis distance outliers samples have gone to the training set and the remaining to the test set. Now, we can start to develop the regressions with the training set, and the validation with the test set, using the Caret package with the “pls” algorithm. We will use the cross validation (10 folds), to select the number of terms.</p>
+</section>
+<section id="model-and-validation-performance-for-protein" class="level2">
+<h2 class="anchored" data-anchor-id="model-and-validation-performance-for-protein">Model and validation performance for Protein</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">set.seed</span>(<span class="dv" style="color: #AD0000;">1234</span>)</span>
+<span id="cb3-2">ctrl <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">trainControl</span>(<span class="at" style="color: #657422;">method =</span> <span class="st" style="color: #20794D;">"cv"</span>, <span class="at" style="color: #657422;">number =</span> <span class="dv" style="color: #AD0000;">10</span>)</span>
+<span id="cb3-3">tec2_pls_model_prot <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">train</span>(<span class="at" style="color: #657422;">y =</span> tec2_prot_train<span class="sc" style="color: #5E5E5E;">$</span>Protein,</span>
+<span id="cb3-4">  <span class="at" style="color: #657422;">x =</span> tec2_prot_train<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der2_spec,</span>
+<span id="cb3-5">  <span class="at" style="color: #657422;">method =</span> <span class="st" style="color: #20794D;">"pls"</span>,</span>
+<span id="cb3-6">  <span class="at" style="color: #657422;">trControl =</span> ctrl)</span>
+<span id="cb3-7"></span>
+<span id="cb3-8"></span>
+<span id="cb3-9">tec2_pls_model_prot</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Partial Least Squares 
+
+160 samples
+100 predictors
+
+No pre-processing
+Resampling: Cross-Validated (10 fold) 
+Summary of sample sizes: 144, 144, 144, 144, 144, 143, ... 
+Resampling results across tuning parameters:
+
+  ncomp  RMSE      Rsquared   MAE      
+  1      1.451693  0.7398494  1.0940694
+  2      1.342024  0.7854652  1.0083106
+  3      1.301409  0.8228018  0.9822213
+
+RMSE was used to select the optimal model using the smallest value.
+The final value used for the model was ncomp = 3.</code></pre>
+</div>
+</div>
+<p>now we can see how the model performs with the test set, and create a table with the “SampleID</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">pls_preds <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">predict</span>(tec2_pls_model_prot, tec2_prot_test<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der2_spec)</span>
+<span id="cb5-2">test_prot_preds <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">bind_cols</span>(tec2_prot_test<span class="sc" style="color: #5E5E5E;">$</span>SampleID ,tec2_prot_test<span class="sc" style="color: #5E5E5E;">$</span>Protein, pls_preds, tec2_prot_test<span class="sc" style="color: #5E5E5E;">$</span>outlier)</span>
+<span id="cb5-3"><span class="fu" style="color: #4758AB;">colnames</span>(test_prot_preds) <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"SampleID"</span>, <span class="st" style="color: #20794D;">"Prot_lab"</span>, <span class="st" style="color: #20794D;">"Prot_pred"</span>, <span class="st" style="color: #20794D;">"Outlier"</span>)</span></code></pre></div>
+</div>
+<p>an XY plot (laboratory vs.&nbsp;predicted values) can gives an idea of the performance of the validation test:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">test_prot_preds <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb6-2">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> Prot_lab, <span class="at" style="color: #657422;">y =</span> Prot_pred, <span class="at" style="color: #657422;">colour =</span> Outlier)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb6-3">  <span class="fu" style="color: #4758AB;">geom_point</span>(<span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">3</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb6-4">  <span class="fu" style="color: #4758AB;">geom_abline</span>() <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb6-5">  <span class="fu" style="color: #4758AB;">scale_color_manual</span>(<span class="at" style="color: #657422;">values =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"no outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"green"</span>,</span>
+<span id="cb6-6">                                <span class="st" style="color: #20794D;">"Warning outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"orange"</span>,</span>
+<span id="cb6-7">                                <span class="st" style="color: #20794D;">"Action outlier"</span> <span class="ot" style="color: #003B4F;">=</span><span class="st" style="color: #20794D;">"red"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<div id="fig-plotprot" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_13/NIT_tutorial_13_files/figure-html/fig-plotprot-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;1: Protein predicted vs reference values.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="model-and-validation-performance-for-fat" class="level2">
+<h2 class="anchored" data-anchor-id="model-and-validation-performance-for-fat">Model and validation performance for Fat</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;">set.seed</span>(<span class="dv" style="color: #AD0000;">1234</span>)</span>
+<span id="cb7-2">ctrl <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">trainControl</span>(<span class="at" style="color: #657422;">method =</span> <span class="st" style="color: #20794D;">"cv"</span>, <span class="at" style="color: #657422;">number =</span> <span class="dv" style="color: #AD0000;">10</span>)</span>
+<span id="cb7-3">tec2_pls_model_fat <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">train</span>(<span class="at" style="color: #657422;">y =</span> tec2_fat_train<span class="sc" style="color: #5E5E5E;">$</span>Fat,</span>
+<span id="cb7-4">  <span class="at" style="color: #657422;">x =</span> tec2_fat_train<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der2_spec,</span>
+<span id="cb7-5">  <span class="at" style="color: #657422;">method =</span> <span class="st" style="color: #20794D;">"pls"</span>,</span>
+<span id="cb7-6">  <span class="at" style="color: #657422;">trControl =</span> ctrl)</span>
+<span id="cb7-7"></span>
+<span id="cb7-8"></span>
+<span id="cb7-9">tec2_pls_model_fat</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Partial Least Squares 
+
+160 samples
+100 predictors
+
+No pre-processing
+Resampling: Cross-Validated (10 fold) 
+Summary of sample sizes: 144, 145, 143, 144, 144, 144, ... 
+Resampling results across tuning parameters:
+
+  ncomp  RMSE      Rsquared   MAE     
+  1      2.339072  0.9731581  1.832527
+  2      2.276391  0.9762236  1.757150
+  3      2.215674  0.9782784  1.744476
+
+RMSE was used to select the optimal model using the smallest value.
+The final value used for the model was ncomp = 3.</code></pre>
+</div>
+</div>
+<p>now we can see how the model performs with the test set, and create a table with the “SampleID</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">pls_preds_fat <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">predict</span>(tec2_pls_model_fat, tec2_fat_test<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der2_spec)</span>
+<span id="cb9-2">test_fat_preds <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">bind_cols</span>(tec2_fat_test<span class="sc" style="color: #5E5E5E;">$</span>SampleID ,tec2_fat_test<span class="sc" style="color: #5E5E5E;">$</span>Fat, pls_preds_fat, tec2_fat_test<span class="sc" style="color: #5E5E5E;">$</span>outlier)</span>
+<span id="cb9-3"><span class="fu" style="color: #4758AB;">colnames</span>(test_fat_preds) <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"SampleID"</span>, <span class="st" style="color: #20794D;">"Fat_lab"</span>, <span class="st" style="color: #20794D;">"Fat_pred"</span>, <span class="st" style="color: #20794D;">"Outlier"</span>)</span></code></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">test_fat_preds <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb10-2">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> Fat_lab, <span class="at" style="color: #657422;">y =</span> Fat_pred, <span class="at" style="color: #657422;">colour =</span> Outlier)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb10-3">  <span class="fu" style="color: #4758AB;">geom_point</span>(<span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">3</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb10-4">  <span class="fu" style="color: #4758AB;">geom_abline</span>() <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb10-5">  <span class="fu" style="color: #4758AB;">scale_color_manual</span>(<span class="at" style="color: #657422;">values =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"no outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"green"</span>,</span>
+<span id="cb10-6">                                <span class="st" style="color: #20794D;">"Warning outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"orange"</span>,</span>
+<span id="cb10-7">                                <span class="st" style="color: #20794D;">"Action outlier"</span> <span class="ot" style="color: #003B4F;">=</span><span class="st" style="color: #20794D;">"red"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_13/NIT_tutorial_13_files/figure-html/plotfat-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="model-and-validation-performance-for-moisture" class="level2">
+<h2 class="anchored" data-anchor-id="model-and-validation-performance-for-moisture">Model and validation performance for Moisture</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;">set.seed</span>(<span class="dv" style="color: #AD0000;">1234</span>)</span>
+<span id="cb11-2">ctrl <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">trainControl</span>(<span class="at" style="color: #657422;">method =</span> <span class="st" style="color: #20794D;">"cv"</span>, <span class="at" style="color: #657422;">number =</span> <span class="dv" style="color: #AD0000;">10</span>)</span>
+<span id="cb11-3">tec2_pls_model_moi <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">train</span>(<span class="at" style="color: #657422;">y =</span> tec2_fat_train<span class="sc" style="color: #5E5E5E;">$</span>Moisture,</span>
+<span id="cb11-4">  <span class="at" style="color: #657422;">x =</span> tec2_fat_train<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der2_spec,</span>
+<span id="cb11-5">  <span class="at" style="color: #657422;">method =</span> <span class="st" style="color: #20794D;">"pls"</span>,</span>
+<span id="cb11-6">  <span class="at" style="color: #657422;">trControl =</span> ctrl)</span>
+<span id="cb11-7"></span>
+<span id="cb11-8"></span>
+<span id="cb11-9">tec2_pls_model_moi</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Partial Least Squares 
+
+160 samples
+100 predictors
+
+No pre-processing
+Resampling: Cross-Validated (10 fold) 
+Summary of sample sizes: 144, 144, 143, 144, 144, 144, ... 
+Resampling results across tuning parameters:
+
+  ncomp  RMSE      Rsquared   MAE     
+  1      2.080841  0.9583109  1.641792
+  2      2.031741  0.9600832  1.593240
+  3      2.014572  0.9612094  1.566407
+
+RMSE was used to select the optimal model using the smallest value.
+The final value used for the model was ncomp = 3.</code></pre>
+</div>
+</div>
+<p>now we can see how the model performs with the test set, and create a table with the “SampleID</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1">pls_preds_moi <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">predict</span>(tec2_pls_model_moi, tec2_moi_test<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der2_spec)</span>
+<span id="cb13-2">test_moi_preds <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">bind_cols</span>(tec2_moi_test<span class="sc" style="color: #5E5E5E;">$</span>SampleID ,tec2_moi_test<span class="sc" style="color: #5E5E5E;">$</span>Moisture, pls_preds_moi, tec2_moi_test<span class="sc" style="color: #5E5E5E;">$</span>outlier)</span>
+<span id="cb13-3"><span class="fu" style="color: #4758AB;">colnames</span>(test_moi_preds) <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"SampleID"</span>, <span class="st" style="color: #20794D;">"Moi_lab"</span>, <span class="st" style="color: #20794D;">"Moi_pred"</span>, <span class="st" style="color: #20794D;">"Outlier"</span>)</span></code></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1">test_moi_preds <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb14-2">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> Moi_lab, <span class="at" style="color: #657422;">y =</span> Moi_pred, <span class="at" style="color: #657422;">colour =</span> Outlier)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb14-3">  <span class="fu" style="color: #4758AB;">geom_point</span>(<span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">3</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb14-4">  <span class="fu" style="color: #4758AB;">geom_abline</span>() <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb14-5">  <span class="fu" style="color: #4758AB;">scale_color_manual</span>(<span class="at" style="color: #657422;">values =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"no outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"green"</span>,</span>
+<span id="cb14-6">                                <span class="st" style="color: #20794D;">"Warning outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"orange"</span>,</span>
+<span id="cb14-7">                                <span class="st" style="color: #20794D;">"Action outlier"</span> <span class="ot" style="color: #003B4F;">=</span><span class="st" style="color: #20794D;">"red"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_13/NIT_tutorial_13_files/figure-html/plotmoi-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Now I save the workspace to continue in the next post</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws13.RData"</span>)</span></code></pre></div>
+</div>
+</section>
+<section id="table-of-results" class="level2" style="color:blue">
+<h2 style="color:blue" class="anchored" data-anchor-id="table-of-results">Table of results</h2>
+<table class="table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>N training</th>
+<th>N test</th>
+<th>Terms</th>
+<th>C.V. error (SECV)</th>
+<th>Test Pred. error (SEV)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Protein</td>
+<td>160</td>
+<td>55</td>
+<td>3</td>
+<td>1.30</td>
+<td>1.49</td>
+</tr>
+<tr class="even">
+<td>Fat</td>
+<td>160</td>
+<td>55</td>
+<td>3</td>
+<td>2.22</td>
+<td>2.34</td>
+</tr>
+<tr class="odd">
+<td>Moisture</td>
+<td>160</td>
+<td>56</td>
+<td>3</td>
+<td>2.01</td>
+<td>2.25</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="conclussions" class="level2 illustration" style="color:blue">
+<h2 class="illustration anchored" style="color:blue" data-anchor-id="conclussions">Conclussions</h2>
+<p>With all the plots above we can ask ourselves several questions in order to find the better performance we can get from the data.</p>
+<ul>
+<li><p>Can we force the model to use more terms , (few for the complexity of the data) , does this option improves the results on the test set?</p></li>
+<li><p>Can we use another model algorithm (different to “pls”) to improve the results?.</p>
+<ul>
+<li>do we have enough samples for those algorithms?</li>
+</ul></li>
+<li><p>Does the “non MD outliers” samples predict better than the “warning” or “action” MD outliers?</p></li>
+<li><p>Do we see non linearities in the plots?</p>
+<ul>
+<li>How we can manages these non linearities?</li>
+<li>Maybe adding more terms to the PLS model we improve the linearity.</li>
+</ul></li>
+<li><p>Comment any other conclusions you have.</p></li>
+</ul>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <category>PLS</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_13/NIT_tutorial_13.html</guid>
+  <pubDate>Sun, 08 Jan 2023 23:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_13/Moi_pred.jpeg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>PCA - NIT tutorial (part 12)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_12/NIT_tutorial_12.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>In a previous post (from this tutorial) we have seen the intercorrelation plots between parameters and we have seen some outliers (they did not follow the trend), but are those samples mahalanobis distance spectral outliers, for the math treatment used?. Now we can go back to that point and check it.</p>
+<p>Let`s start by loading our workspace and the libraries we are going to use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws11.RData"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(tidyverse)</span></code></pre></div>
+</div>
+<section id="moisture-vs-fat" class="level2">
+<h2 class="anchored" data-anchor-id="moisture-vs-fat">Moisture vs Fat</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">tecator2 <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb2-2">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>( <span class="at" style="color: #657422;">x =</span> Moisture, <span class="at" style="color: #657422;">y =</span> Fat, <span class="at" style="color: #657422;">color =</span> outlier)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb2-3">  <span class="fu" style="color: #4758AB;">geom_point</span>() <span class="sc" style="color: #5E5E5E;">+</span> </span>
+<span id="cb2-4">  <span class="fu" style="color: #4758AB;">geom_smooth</span>(<span class="at" style="color: #657422;">method =</span> lm, <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb2-5">  <span class="fu" style="color: #4758AB;">scale_color_manual</span>(<span class="at" style="color: #657422;">values =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"no outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"green"</span>,</span>
+<span id="cb2-6">                                <span class="st" style="color: #20794D;">"Warning outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"orange"</span>,</span>
+<span id="cb2-7">                                <span class="st" style="color: #20794D;">"Action outlier"</span> <span class="ot" style="color: #003B4F;">=</span><span class="st" style="color: #20794D;">"red"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_12/NIT_tutorial_12_files/figure-html/Moi_Fat-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>In this case we can see how the extreme samples (with high fat and low moisture are action or warning outliers), and that some of the high moisture - low fat outliers dis not follow the trend.</p>
+</section>
+<section id="moisture-vs-protein" class="level2">
+<h2 class="anchored" data-anchor-id="moisture-vs-protein">Moisture vs Protein</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">tecator2 <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb3-2">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>( <span class="at" style="color: #657422;">x =</span> Moisture, <span class="at" style="color: #657422;">y =</span> Protein, <span class="at" style="color: #657422;">color =</span> outlier)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb3-3">  <span class="fu" style="color: #4758AB;">geom_point</span>() <span class="sc" style="color: #5E5E5E;">+</span> </span>
+<span id="cb3-4">  <span class="fu" style="color: #4758AB;">geom_smooth</span>(<span class="at" style="color: #657422;">method =</span> lm, <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb3-5">  <span class="fu" style="color: #4758AB;">scale_color_manual</span>(<span class="at" style="color: #657422;">values =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"no outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"green"</span>,</span>
+<span id="cb3-6">                                <span class="st" style="color: #20794D;">"Warning outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"orange"</span>,</span>
+<span id="cb3-7">                                <span class="st" style="color: #20794D;">"Action outlier"</span> <span class="ot" style="color: #003B4F;">=</span><span class="st" style="color: #20794D;">"red"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_12/NIT_tutorial_12_files/figure-html/Moi_Prot-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>in this case we do not see that almost all the low moisture - low protein are marked as outliers, but the rest of the outliers (except two warning) follow the trend.</p>
+</section>
+<section id="fat-vs-protein" class="level2">
+<h2 class="anchored" data-anchor-id="fat-vs-protein">Fat vs Protein</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">tecator2 <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb4-2">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>( <span class="at" style="color: #657422;">x =</span> Fat, <span class="at" style="color: #657422;">y =</span> Protein, <span class="at" style="color: #657422;">color =</span> outlier)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb4-3">  <span class="fu" style="color: #4758AB;">geom_point</span>() <span class="sc" style="color: #5E5E5E;">+</span> </span>
+<span id="cb4-4">  <span class="fu" style="color: #4758AB;">geom_smooth</span>(<span class="at" style="color: #657422;">method =</span> lm, <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb4-5">  <span class="fu" style="color: #4758AB;">scale_color_manual</span>(<span class="at" style="color: #657422;">values =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"no outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"green"</span>,</span>
+<span id="cb4-6">                                <span class="st" style="color: #20794D;">"Warning outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"orange"</span>,</span>
+<span id="cb4-7">                                <span class="st" style="color: #20794D;">"Action outlier"</span> <span class="ot" style="color: #003B4F;">=</span><span class="st" style="color: #20794D;">"red"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_12/NIT_tutorial_12_files/figure-html/Fat_Prot-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>it seems the same case than Protein vs Moisture.</p>
+</section>
+<section id="relation-between-the-spectra-pattern-an-the-mahalanobis-distance-ranges" class="level2">
+<h2 class="anchored" data-anchor-id="relation-between-the-spectra-pattern-an-the-mahalanobis-distance-ranges">Relation between the spectra pattern an the Mahalanobis distance ranges</h2>
+<p>Other observation we can do is with the spectra math treated giving colors to the spectra math treated, and looking if we see some patterns: (First we have to do some work removing the prefix (snvdt2der2_spec.)to the wavelength headers).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">tecator3 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">bind_cols</span>(tecator2<span class="sc" style="color: #5E5E5E;">$</span>SampleID, tecator2<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der2_spec, tecator2<span class="sc" style="color: #5E5E5E;">$</span>outlier) </span>
+<span id="cb5-2"><span class="fu" style="color: #4758AB;">colnames</span>(tecator3) <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"SampleID"</span>, <span class="fu" style="color: #4758AB;">seq</span>(<span class="dv" style="color: #AD0000;">850</span>, <span class="dv" style="color: #AD0000;">1048</span>, <span class="dv" style="color: #AD0000;">2</span>), <span class="st" style="color: #20794D;">"outlier"</span>)</span></code></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">tecator3  <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb6-2">  <span class="fu" style="color: #4758AB;">pivot_longer</span>(<span class="at" style="color: #657422;">cols =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">2</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">101</span>),</span>
+<span id="cb6-3">               <span class="at" style="color: #657422;">names_to =</span> <span class="st" style="color: #20794D;">"wavelength"</span>,</span>
+<span id="cb6-4">               <span class="at" style="color: #657422;">values_to =</span> <span class="st" style="color: #20794D;">"absorbance"</span>)  <span class="sc" style="color: #5E5E5E;">%&gt;%</span>  </span>
+<span id="cb6-5">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">wavelength =</span> <span class="fu" style="color: #4758AB;">as.integer</span>(<span class="fu" style="color: #4758AB;">str_extract</span>(wavelength, <span class="st" style="color: #20794D;">"[:digit:]+"</span>))) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb6-6">    <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> wavelength, <span class="at" style="color: #657422;">y =</span> absorbance, <span class="at" style="color: #657422;">group =</span> SampleID, <span class="at" style="color: #657422;">color =</span> outlier)) <span class="sc" style="color: #5E5E5E;">+</span> </span>
+<span id="cb6-7">  <span class="fu" style="color: #4758AB;">geom_line</span>(<span class="at" style="color: #657422;">alpha =</span> <span class="fl" style="color: #AD0000;">0.5</span>) <span class="sc" style="color: #5E5E5E;">+</span> </span>
+<span id="cb6-8">  <span class="fu" style="color: #4758AB;">scale_color_manual</span>(<span class="at" style="color: #657422;">values =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"no outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"green"</span>,</span>
+<span id="cb6-9">                                <span class="st" style="color: #20794D;">"Warning outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"orange"</span>,</span>
+<span id="cb6-10">                                <span class="st" style="color: #20794D;">"Action outlier"</span> <span class="ot" style="color: #003B4F;">=</span><span class="st" style="color: #20794D;">"red"</span>)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb6-11">  <span class="fu" style="color: #4758AB;">theme_light</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_12/NIT_tutorial_12_files/figure-html/tecator3_2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>In the spectra we can see how the warning and action mahalanobis distance outliers are also extreme vs.&nbsp;the absorbance values. We have to take into account that these absorbances have a relationship with the concentration of the parameters: Fat, Moisture and Protein.</p>
+<p>Now we save the workspace to use in the next post.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws12.RData"</span>)</span></code></pre></div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <category>PCA</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_12/NIT_tutorial_12.html</guid>
+  <pubDate>Sun, 18 Dec 2022 23:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_12/Mahal_dist_spec.jpeg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>PCA - NIT tutorial (part 11)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_11/NIT_tutorial_11.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>The first idea for this post is to add a new variable with the robust Mahalanobis distance value we have obtained in the previous post. From this variable, we create a new factor variable to define three types of samples: “no H outlier” for the samples with a robust mahalanobis distance lower than 3, “Warning H outlier” for the samples with values betweeen 3 and 4, and “Action H outlier” for the samples with values higher than 4..</p>
+<p>Let`s start by loading our workspace and the libraries we are going to use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws10.RData"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(tidyverse)</span></code></pre></div>
+</div>
+<p>As we are going to work from now with the spectra math treated with scatter correction and second derivative, we can create a new dataframe with this spectra data, the reference values and other user defined fields that we can consider as the robust mahalanobis distance we have been talking before.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">tecator1 <span class="ot" style="color: #003B4F;">&lt;-</span> </span>
+<span id="cb2-2">tecator <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb2-3">  <span class="fu" style="color: #4758AB;">select</span>(SampleID, Moisture, Fat, Protein, snvdt2der2_spec) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb2-4">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">RMD =</span> <span class="fu" style="color: #4758AB;">as.numeric</span>(res<span class="sc" style="color: #5E5E5E;">$</span>rd))</span></code></pre></div>
+</div>
+<p>Now let`s add the new variable with the robust mahalanobis distances. Normally, if the distances are below 3 the samples are not considered as outliers, if they are between 3 and 4 are considered as warning outliers and if they are over 4, they are considered as action outliers. it is important to know if the outliers have some relation with extreme reference values (for every parameter) or any other variables like the origin, temperature, instrument (in case we have more than one in our database), etc. Let´s add a new factor variable to define if the samples are “no ourliers”, “warning ourliers” or “action outliers”.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">tecator2 <span class="ot" style="color: #003B4F;">&lt;-</span> </span>
+<span id="cb3-2">tecator1 <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb3-3">  <span class="co" style="color: #5E5E5E;">#define new variable 'scorer' using mutate() and case_when()</span></span>
+<span id="cb3-4">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">outlier =</span> <span class="fu" style="color: #4758AB;">case_when</span>(RMD <span class="sc" style="color: #5E5E5E;">&lt;=</span> <span class="dv" style="color: #AD0000;">3</span> <span class="sc" style="color: #5E5E5E;">~</span> <span class="st" style="color: #20794D;">"no outlier"</span>,</span>
+<span id="cb3-5">                           RMD <span class="sc" style="color: #5E5E5E;">&gt;</span> <span class="dv" style="color: #AD0000;">3</span> <span class="sc" style="color: #5E5E5E;">&amp;</span> RMD <span class="sc" style="color: #5E5E5E;">&lt;=</span> <span class="dv" style="color: #AD0000;">4</span> <span class="sc" style="color: #5E5E5E;">~</span> <span class="st" style="color: #20794D;">"Warning outlier"</span>,</span>
+<span id="cb3-6">                           RMD <span class="sc" style="color: #5E5E5E;">&gt;</span> <span class="dv" style="color: #AD0000;">4</span> <span class="sc" style="color: #5E5E5E;">~</span> <span class="st" style="color: #20794D;">"Action outlier"</span>)) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb3-7">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">outlier =</span> <span class="fu" style="color: #4758AB;">as.factor</span>(outlier))</span></code></pre></div>
+</div>
+<p>before to develop the regressions, why not to see if the outliers are related to extreme samples for the different parameters. We can see that giving colors to the histograms to the histograms (for example). So let`s plot the histograms for the tecator parameters ( moisture, fat and protein)</p>
+<section id="histograms-for-moisture-with-mahalanobis-ranges-colors." class="level2">
+<h2 class="anchored" data-anchor-id="histograms-for-moisture-with-mahalanobis-ranges-colors.">Histograms for moisture with Mahalanobis ranges colors.</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">ggplot</span>(tecator2, <span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> Moisture, <span class="at" style="color: #657422;">fill =</span> outlier)) <span class="sc" style="color: #5E5E5E;">+</span> </span>
+<span id="cb4-2">  <span class="fu" style="color: #4758AB;">geom_histogram</span>(<span class="at" style="color: #657422;">position =</span> <span class="st" style="color: #20794D;">"identity"</span>, <span class="at" style="color: #657422;">alpha =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">bins =</span> <span class="dv" style="color: #AD0000;">50</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb4-3">  <span class="fu" style="color: #4758AB;">scale_fill_manual</span>(<span class="at" style="color: #657422;">values =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"no outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"green"</span>,</span>
+<span id="cb4-4">                                <span class="st" style="color: #20794D;">"Warning outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"orange"</span>,</span>
+<span id="cb4-5">                                <span class="st" style="color: #20794D;">"Action outlier"</span> <span class="ot" style="color: #003B4F;">=</span><span class="st" style="color: #20794D;">"red"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_11/NIT_tutorial_11_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="histograms-for-fat-with-mahalanobis-ranges-colors." class="level2">
+<h2 class="anchored" data-anchor-id="histograms-for-fat-with-mahalanobis-ranges-colors.">Histograms for fat with Mahalanobis ranges colors.</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;">ggplot</span>(tecator2, <span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> Fat, <span class="at" style="color: #657422;">fill =</span> outlier)) <span class="sc" style="color: #5E5E5E;">+</span>                 </span>
+<span id="cb5-2">  <span class="fu" style="color: #4758AB;">geom_histogram</span>(<span class="at" style="color: #657422;">position =</span> <span class="st" style="color: #20794D;">"identity"</span>, <span class="at" style="color: #657422;">alpha =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">bins =</span> <span class="dv" style="color: #AD0000;">50</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb5-3">  <span class="fu" style="color: #4758AB;">scale_fill_manual</span>(<span class="at" style="color: #657422;">values =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"no outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"green"</span>,</span>
+<span id="cb5-4">                                <span class="st" style="color: #20794D;">"Warning outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"orange"</span>,</span>
+<span id="cb5-5">                                <span class="st" style="color: #20794D;">"Action outlier"</span> <span class="ot" style="color: #003B4F;">=</span><span class="st" style="color: #20794D;">"red"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_11/NIT_tutorial_11_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="histograms-for-protein-with-mahalanobis-ranges-colors." class="level2">
+<h2 class="anchored" data-anchor-id="histograms-for-protein-with-mahalanobis-ranges-colors.">Histograms for protein with Mahalanobis ranges colors.</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">ggplot</span>(tecator2, <span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> Protein, <span class="at" style="color: #657422;">fill =</span> outlier)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb6-2">  <span class="fu" style="color: #4758AB;">geom_histogram</span>(<span class="at" style="color: #657422;">position =</span> <span class="st" style="color: #20794D;">"identity"</span>, <span class="at" style="color: #657422;">alpha =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">bins =</span> <span class="dv" style="color: #AD0000;">50</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb6-3">  <span class="fu" style="color: #4758AB;">scale_fill_manual</span>(<span class="at" style="color: #657422;">values =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"no outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"green"</span>,</span>
+<span id="cb6-4">                                <span class="st" style="color: #20794D;">"Warning outlier"</span> <span class="ot" style="color: #003B4F;">=</span> <span class="st" style="color: #20794D;">"orange"</span>,</span>
+<span id="cb6-5">                                <span class="st" style="color: #20794D;">"Action outlier"</span> <span class="ot" style="color: #003B4F;">=</span><span class="st" style="color: #20794D;">"red"</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_11/NIT_tutorial_11_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>As we can see extreme samples are normally warning or action outliers (we can confirm this better when we will develop the regressions on coming posts), but there are other causes as well.</p>
+<p>let`s save the workspace for our next post</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws11.RData"</span>)</span></code></pre></div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <category>PCA</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_11/NIT_tutorial_11.html</guid>
+  <pubDate>Thu, 15 Dec 2022 23:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_11/Moi_rmd_hist.jpeg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>PCA - NIT tutorial (part 10)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_10/NIT_tutorial_10.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>First of all let´s load the previous workspace:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws9.RData"</span>)</span></code></pre></div>
+</div>
+<p>and the libraries that we are going to use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(chemometrics)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;">library</span>(resemble)</span>
+<span id="cb2-3"><span class="fu" style="color: #4758AB;">library</span>(scatterplot3d)</span></code></pre></div>
+</div>
+<p>In this post we start looking for outiers, or samples which look different than the majority. Finally we have decided to select three principal components, for that reason is much easier the graphical representation due to we can use 2D or 3D graphics. One of the most common methods is to draw an ellipsoid in the Principal Component space and the samples which fall outside the ellipsoid are considered as outliers.</p>
+<p>As we remember the score matrix is tecator_pc$x[ , 1:3], and we can see all the posible scores planes with:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">pairs</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ ,<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">3</span>])</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_10/NIT_tutorial_10_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<section id="mahalanobis-distances-ellipses" class="level2">
+<h2 class="anchored" data-anchor-id="mahalanobis-distances-ellipses">Mahalanobis distances ellipses</h2>
+<p>We can create <a href="https://en.wikipedia.org/wiki/Ellipse#General_ellipse">ellipses</a> on every plane with the average spectrum in the center. As we can see the ratio change depending of the PC number and its variability.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">drawMahal</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">2</span>], <span class="at" style="color: #657422;">center =</span> <span class="fu" style="color: #4758AB;">apply</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">2</span>], <span class="dv" style="color: #AD0000;">2</span>, mean), </span>
+<span id="cb4-2">          <span class="at" style="color: #657422;">covariance =</span> <span class="fu" style="color: #4758AB;">cov</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">2</span>]), <span class="at" style="color: #657422;">quantile =</span> <span class="fl" style="color: #AD0000;">0.975</span> )</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_10/NIT_tutorial_10_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;">drawMahal</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>,<span class="dv" style="color: #AD0000;">3</span>)], <span class="at" style="color: #657422;">center =</span> <span class="fu" style="color: #4758AB;">apply</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>,<span class="dv" style="color: #AD0000;">3</span>)], <span class="dv" style="color: #AD0000;">2</span>, mean), </span>
+<span id="cb5-2">          <span class="at" style="color: #657422;">covariance =</span> <span class="fu" style="color: #4758AB;">cov</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>,<span class="dv" style="color: #AD0000;">3</span>)]), <span class="at" style="color: #657422;">quantile =</span> <span class="fl" style="color: #AD0000;">0.975</span> )</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_10/NIT_tutorial_10_files/figure-html/unnamed-chunk-4-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">drawMahal</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">2</span>,<span class="dv" style="color: #AD0000;">3</span>)], <span class="at" style="color: #657422;">center =</span> <span class="fu" style="color: #4758AB;">apply</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">2</span>,<span class="dv" style="color: #AD0000;">3</span>)], <span class="dv" style="color: #AD0000;">2</span>, mean), </span>
+<span id="cb6-2">          <span class="at" style="color: #657422;">covariance =</span> <span class="fu" style="color: #4758AB;">cov</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">2</span>,<span class="dv" style="color: #AD0000;">3</span>)]), <span class="at" style="color: #657422;">quantile =</span> <span class="fl" style="color: #AD0000;">0.975</span> )</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_10/NIT_tutorial_10_files/figure-html/unnamed-chunk-4-3.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The final Mahalanobis distance is calculated for the three principal components, so we have to proceed with a calculation which use the complete score matrix (the three PC selected). Let`s keep the distances (classical and robust) value in an object called “res”.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">res <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">Moutlier</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">3</span>])</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_10/NIT_tutorial_10_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Now we can take apart the samples with distance higher than 3, and make a subset with them:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">md_out <span class="ot" style="color: #003B4F;">&lt;-</span>  <span class="fu" style="color: #4758AB;">which</span>(res<span class="sc" style="color: #5E5E5E;">$</span>md <span class="sc" style="color: #5E5E5E;">&gt;</span> <span class="dv" style="color: #AD0000;">3</span>)</span>
+<span id="cb8-2">md_out <span class="ot" style="color: #003B4F;">&lt;-</span> tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[md_out, ]</span></code></pre></div>
+</div>
+</section>
+<section id="looking-to-the-mahalanobis-distance-outliers" class="level2">
+<h2 class="anchored" data-anchor-id="looking-to-the-mahalanobis-distance-outliers">Looking to the mahalanobis distance outliers</h2>
+<p>Let`s mark these outlier samples in the ellipses we have seen before:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;">drawMahal</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">2</span>], <span class="at" style="color: #657422;">center =</span> <span class="fu" style="color: #4758AB;">apply</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">2</span>], <span class="dv" style="color: #AD0000;">2</span>, mean), </span>
+<span id="cb9-2">          <span class="at" style="color: #657422;">covariance =</span> <span class="fu" style="color: #4758AB;">cov</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">2</span>]), <span class="at" style="color: #657422;">quantile =</span> <span class="fl" style="color: #AD0000;">0.975</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"grey"</span> )</span>
+<span id="cb9-3"></span>
+<span id="cb9-4"><span class="fu" style="color: #4758AB;">points</span>(<span class="at" style="color: #657422;">x =</span> md_out[ , <span class="dv" style="color: #AD0000;">1</span>],</span>
+<span id="cb9-5">       <span class="at" style="color: #657422;">y =</span> md_out[ , <span class="dv" style="color: #AD0000;">2</span>],</span>
+<span id="cb9-6">       <span class="at" style="color: #657422;">pch =</span> <span class="dv" style="color: #AD0000;">16</span>, </span>
+<span id="cb9-7">       <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>)</span>
+<span id="cb9-8"></span>
+<span id="cb9-9"><span class="fu" style="color: #4758AB;">text</span>(md_out[ , <span class="dv" style="color: #AD0000;">1</span>], md_out[ , <span class="dv" style="color: #AD0000;">2</span>], <span class="at" style="color: #657422;">label =</span> <span class="fu" style="color: #4758AB;">rownames</span>(md_out), <span class="at" style="color: #657422;">pos =</span> <span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_10/NIT_tutorial_10_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>As we can see in this first plot many of the samples with hight Mahalanobis distance are inside the ellipse (131, 4, 174, 5, 7, 11, 132 and 44)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;">drawMahal</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>,<span class="dv" style="color: #AD0000;">3</span>)], <span class="at" style="color: #657422;">center =</span> <span class="fu" style="color: #4758AB;">apply</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>,<span class="dv" style="color: #AD0000;">3</span>)], <span class="dv" style="color: #AD0000;">2</span>, mean), </span>
+<span id="cb10-2">          <span class="at" style="color: #657422;">covariance =</span> <span class="fu" style="color: #4758AB;">cov</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>,<span class="dv" style="color: #AD0000;">3</span>)]), <span class="at" style="color: #657422;">quantile =</span> <span class="fl" style="color: #AD0000;">0.975</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"grey"</span> )</span>
+<span id="cb10-3"></span>
+<span id="cb10-4"><span class="fu" style="color: #4758AB;">points</span>(<span class="at" style="color: #657422;">x =</span> md_out[ , <span class="dv" style="color: #AD0000;">1</span>],</span>
+<span id="cb10-5">       <span class="at" style="color: #657422;">y =</span> md_out[ , <span class="dv" style="color: #AD0000;">3</span>],</span>
+<span id="cb10-6">       <span class="at" style="color: #657422;">pch =</span> <span class="dv" style="color: #AD0000;">16</span>, </span>
+<span id="cb10-7">       <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>)</span>
+<span id="cb10-8"></span>
+<span id="cb10-9"><span class="fu" style="color: #4758AB;">text</span>(md_out[ , <span class="dv" style="color: #AD0000;">1</span>], md_out[ , <span class="dv" style="color: #AD0000;">3</span>], <span class="at" style="color: #657422;">label =</span> <span class="fu" style="color: #4758AB;">rownames</span>(md_out), <span class="at" style="color: #657422;">pos =</span> <span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_10/NIT_tutorial_10_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>In this plot all the samples that were into the ellipse on the first plot are now outside.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;">drawMahal</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">2</span>,<span class="dv" style="color: #AD0000;">3</span>)], <span class="at" style="color: #657422;">center =</span> <span class="fu" style="color: #4758AB;">apply</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">2</span>,<span class="dv" style="color: #AD0000;">3</span>)], <span class="dv" style="color: #AD0000;">2</span>, mean), </span>
+<span id="cb11-2">          <span class="at" style="color: #657422;">covariance =</span> <span class="fu" style="color: #4758AB;">cov</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">2</span>,<span class="dv" style="color: #AD0000;">3</span>)]), <span class="at" style="color: #657422;">quantile =</span> <span class="fl" style="color: #AD0000;">0.975</span>, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"grey"</span> )</span>
+<span id="cb11-3"><span class="fu" style="color: #4758AB;">points</span>(<span class="at" style="color: #657422;">x =</span> md_out[ , <span class="dv" style="color: #AD0000;">2</span>],</span>
+<span id="cb11-4">       <span class="at" style="color: #657422;">y =</span> md_out[ , <span class="dv" style="color: #AD0000;">3</span>],</span>
+<span id="cb11-5">       <span class="at" style="color: #657422;">pch =</span> <span class="dv" style="color: #AD0000;">16</span>, </span>
+<span id="cb11-6">       <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>)</span>
+<span id="cb11-7"><span class="fu" style="color: #4758AB;">text</span>(md_out[ , <span class="dv" style="color: #AD0000;">2</span>], md_out[ , <span class="dv" style="color: #AD0000;">3</span>], <span class="at" style="color: #657422;">label =</span> <span class="fu" style="color: #4758AB;">rownames</span>(md_out), <span class="at" style="color: #657422;">pos =</span> <span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_10/NIT_tutorial_10_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="looking-to-cubes-in-3d" class="level2">
+<h2 class="anchored" data-anchor-id="looking-to-cubes-in-3d">Looking to cubes in 3D</h2>
+<p>On the third plot again same samples are on and other out, so we have to take into acount that the Mahalanobis distance is a combination distance of the three planes, so we have to look at all of them at the same time and the better way to do it (in the case of three PCs), is in a cube.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1">tecator_pc_3d <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">scatterplot3d</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span>],</span>
+<span id="cb12-2">              tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">2</span>],</span>
+<span id="cb12-3">              tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">3</span>], </span>
+<span id="cb12-4">              <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"PC1"</span>,</span>
+<span id="cb12-5">              <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">"PC2"</span>,</span>
+<span id="cb12-6">              <span class="at" style="color: #657422;">zlab =</span> <span class="st" style="color: #20794D;">"PC3"</span>,</span>
+<span id="cb12-7">              <span class="at" style="color: #657422;">color =</span> <span class="fu" style="color: #4758AB;">rgb</span>(<span class="at" style="color: #657422;">red=</span><span class="fl" style="color: #AD0000;">0.5</span>, <span class="at" style="color: #657422;">green=</span><span class="fl" style="color: #AD0000;">0.5</span>, <span class="at" style="color: #657422;">blue=</span><span class="fl" style="color: #AD0000;">0.5</span>, <span class="at" style="color: #657422;">alpha =</span> <span class="fl" style="color: #AD0000;">0.5</span>),</span>
+<span id="cb12-8">              <span class="at" style="color: #657422;">pch =</span> <span class="dv" style="color: #AD0000;">16</span>, <span class="at" style="color: #657422;">angle =</span><span class="dv" style="color: #AD0000;">50</span>)</span>
+<span id="cb12-9"></span>
+<span id="cb12-10">tecator_pc_3d<span class="sc" style="color: #5E5E5E;">$</span><span class="fu" style="color: #4758AB;">points3d</span>(md_out[ , <span class="dv" style="color: #AD0000;">1</span>],</span>
+<span id="cb12-11">                       md_out[ , <span class="dv" style="color: #AD0000;">2</span>],</span>
+<span id="cb12-12">                       md_out[ , <span class="dv" style="color: #AD0000;">3</span>], </span>
+<span id="cb12-13">                       <span class="at" style="color: #657422;">pch =</span> <span class="st" style="color: #20794D;">"X"</span>,</span>
+<span id="cb12-14">                       <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_10/NIT_tutorial_10_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="callout-note callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>I have been working with the software Win ISI (used develop models for Foss NIR Systems) for a long time, and developing the PCA with a similar math treatment, we get the same Mahalanobis distance robust outliers than our calculation with the chemometric package.</p>
+</div>
+</div>
+<p>let`s save the workspace for our next post</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws10.RData"</span>)</span></code></pre></div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <category>PCA</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_10/NIT_tutorial_10.html</guid>
+  <pubDate>Wed, 16 Nov 2022 23:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_10/outliers_in_the_cube.jpeg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>PCA - NIT tutorial (part 9)</title>
+  <dc:creator>José Ramón Cuesta</dc:creator>
+  <link>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_9/NIT_tutorial_9.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>As always, we load first our work space to continue from the previous post</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">load</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws8.RData"</span>)</span></code></pre></div>
+</div>
+<p>Now we load the libraries we are going to use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(RColorBrewer)</span></code></pre></div>
+</div>
+<p>We continue exploring the Principal Component Analysis, trying to understand as best as possible our data set. One of the arguments we get from the “prcomp” calculation is the <strong>x</strong> matrix, ans with this matrix we can have a look to the map of scores for the first three PCs.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">pairs</span>(tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>x[ , <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">3</span>])</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_9/NIT_tutorial_9_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<section id="checking-the-scores-maps" class="level2">
+<h2 class="anchored" data-anchor-id="checking-the-scores-maps">Checking the scores maps</h2>
+<p>We can order the samples by their parameter content and assigning a color scale check the distribution of the samples in the scores map, in this case the distribution of fat , moisture and protein:</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-scores12_fat" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_9/NIT_tutorial_9_files/figure-html/fig-scores12_fat-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;1: Distributions of scores on PC1 and PC2 vs.&nbsp;their fat content</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-scores12_moisture" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_9/NIT_tutorial_9_files/figure-html/fig-scores12_moisture-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;2: Distributions of scores on PC1 and PC2 vs.&nbsp;their moisture content</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-scores12_protein" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_9/NIT_tutorial_9_files/figure-html/fig-scores12_protein-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;3: Distributions of scores on PC1 and PC2 vs.&nbsp;their protein content</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Once again with these plots we see how the parameter fat has a negative correlation with the moisture and protein parameters.</p>
+</section>
+<section id="checking-the-spectra-wavelengths" class="level2">
+<h2 class="anchored" data-anchor-id="checking-the-spectra-wavelengths">Checking the spectra wavelengths</h2>
+<p>Another option is to check if, with these color palettes, we can see the wavelengths or wavelengths areas which are more important for every parameter.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-snvdt2_fat" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_9/NIT_tutorial_9_files/figure-html/fig-snvdt2_fat-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;4: Relationship between the spectra bands and fat</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-snvdt2_moi" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_9/NIT_tutorial_9_files/figure-html/fig-snvdt2_moi-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;5: Relationship between the spectra bands and moisture</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-snvdt2_prot" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_9/NIT_tutorial_9_files/figure-html/fig-snvdt2_prot-1.png" class="img-fluid figure-img" width="672"></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;6: Relationship between the spectra bands and protein</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>In Figure&nbsp;4 we can see the positive correlation between the 930 nm band and the fat content. In Figure&nbsp;5 all the area between 950 and 1000nm seems to be correlated with moisture. Finally in the Figure&nbsp;6 we can see certain areas where there is a positive correlation, but we will try to see it better with other math treatments.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws9.RData"</span>)</span></code></pre></div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>NIT Tutorial</category>
+  <category>PCA</category>
+  <guid>https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_9/NIT_tutorial_9.html</guid>
+  <pubDate>Tue, 01 Nov 2022 23:00:00 GMT</pubDate>
+  <media:content url="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_9/spectra_moisture.jpeg" medium="image" type="image/jpeg"/>
+</item>
 <item>
   <title>PCA - NIT tutorial (part 8)</title>
   <dc:creator>José Ramón Cuesta</dc:creator>
@@ -29,8 +761,8 @@
 <h2 class="anchored" data-anchor-id="principal-component-analysis">Principal Component Analysis</h2>
 <p>We use the spectra matrix “X” and we want to decompose it into a matrix product:</p>
 </section>
-<section id="x-t.pt-e" class="level2">
-<h2 class="anchored" data-anchor-id="x-t.pt-e"><strong>X = T.P<sup>t</sup> + E</strong></h2>
+<section id="x-tpt-e" class="level2">
+<h2 class="anchored" data-anchor-id="x-tpt-e"><img src="https://latex.codecogs.com/png.latex?X%20=%20TP%5E%7Bt%7D+%20E"></h2>
 <p>where:</p>
 <ul>
 <li><p><strong>X</strong> is the spectra matrix (with the math treatment we have choose)</p></li>
@@ -38,7 +770,7 @@
 <li><p><strong>P</strong> is the terms matrix and</p></li>
 <li><p><strong>E</strong> is the error matrix.</p></li>
 </ul>
-<p>There are several ways to calculate the PCA with R, but let´s start with “prcomp”. For the calculation we will use the tecator spectra with the SNV+DT2 that we have seen on part 6.</p>
+<p>There are several ways to calculate the PCA with R, but let´s start with “prcomp”. For the calculation we will use the tecator spectra with the SNV+DT2 and the second derivative, that we have seen on part 7.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">tecator_pc <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">prcomp</span>(tecator<span class="sc" style="color: #5E5E5E;">$</span>snvdt2der2_spec)</span>
 <span id="cb2-2"><span class="fu" style="color: #4758AB;">summary</span>(tecator_pc)[[<span class="dv" style="color: #AD0000;">6</span>]][,<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">10</span>]</span></code></pre></div>
@@ -68,7 +800,7 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-expvar_pc" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-expvar_pc-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 1: Percentage Variance explained by PC</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;1: Percentage Variance explained by PC</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -80,7 +812,7 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-cumvar_pc" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-cumvar_pc-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 2: Cumulative variance as we add a new PC</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;2: Cumulative variance as we add a new PC</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -92,12 +824,12 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-biplot12" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-biplot12-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 3: Biplot with scores and loadings for PC1 vs PC2</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;3: Biplot with scores and loadings for PC1 vs PC2</figcaption><p></p>
 </figure>
 </div>
 </div>
 </div>
-<p>Figure&nbsp;3 <em>We see the samples as a black number in the plane, and the scores are the projection of those samples on the low axis (PC1), and left axis (PC2). The loadings are expressed as red arrow, and their projections must be done over the bottom and right axis. As we can see in the biplot of PC1 and PC2, the wavelengths between 922 and 936 have a high negative loading value for PC1, but very low for PC2.</em></p>
+<p>Figure&nbsp;3 <em>We see the samples as a black number in the plane, and the scores are the projection of those samples on the low axis (PC1), and left axis (PC2). The “loadings” are expressed as red arrow, and their projections must be done over the bottom and right axis. As we can see in the biplot of PC1 and PC2, the wavelengths between 922 and 936 have a high negative loading value for PC1, but very low for PC2.</em></p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;">matplot</span>(<span class="fu" style="color: #4758AB;">seq</span>(<span class="dv" style="color: #AD0000;">850</span>, <span class="dv" style="color: #AD0000;">1048</span>, <span class="at" style="color: #657422;">by =</span> <span class="dv" style="color: #AD0000;">2</span>), tecator_pc<span class="sc" style="color: #5E5E5E;">$</span>rotation[ , <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">2</span>], <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>, <span class="at" style="color: #657422;">ylab =</span> <span class="st" style="color: #20794D;">""</span>, <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"wavelength"</span>, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Loadings 1 and 2"</span>, </span>
 <span id="cb8-2">        <span class="at" style="color: #657422;">col =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"black"</span>, <span class="st" style="color: #20794D;">"red"</span>))</span>
@@ -108,20 +840,20 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-loadings12" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-loadings12-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 4: Loadings 1 and 2</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;4: Loadings 1 and 2</figcaption><p></p>
 </figure>
 </div>
 </div>
 </div>
-<p>Figure&nbsp;4 <em>All those arrows in the plane that we call loadings (100 values, one for each wavelength), can be seen better as a spectrum where we see peaks and valleys that give details about the importance of every wavelength in the Principal Component. We show the area between 922 and 936 that we have been talking about.</em></p>
-<p>Let´s see now the biplot for PC2 and PC3</p>
+<p>Figure&nbsp;4 <em>All those arrows in the plane that we call “loadings” (100 values, one for each wavelength), can be seen better as a spectrum where we see peaks and valleys that give details about the importance of every wavelength in the Principal Component. We show the area between 922 and 936 that we have been talking about.</em></p>
+<p>Let´s see now the “biplot” for PC2 and PC3.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;">biplot</span>(tecator_pc, <span class="at" style="color: #657422;">choices =</span> <span class="dv" style="color: #AD0000;">2</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">3</span>)</span></code></pre></div>
 <div class="cell-output-display">
 <div id="fig-biplot23" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-biplot23-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 5: Biplot with scores and loadings for PC2 vs PC3</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;5: Biplot with scores and loadings for PC2 vs PC3</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -134,7 +866,7 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-loadings23" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-loadings23-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 6: Loadings 2 and 3</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;6: Loadings 2 and 3</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -167,7 +899,7 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-loadings12bands" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-loadings12bands-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 7: Interpret loadings 1 and 2 bands</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;7: Interpret loadings 1 and 2 bands</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -195,7 +927,7 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-PC1vsMOI" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-PC1vsMOI-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 8: correlating Moisture with scores for loading 1</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;8: correlating Moisture with scores for loading 1</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -206,7 +938,7 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-PC1vsFAT" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-PC1vsFAT-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 9: correlating Fat with scores for loading 1</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;9: correlating Fat with scores for loading 1</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -217,13 +949,16 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-PC1vsPROT" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_8/NIT_tutorial_8_files/figure-html/fig-PC1vsPROT-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 10: correlating Protein with scores for loading 1</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;10: correlating Protein with scores for loading 1</figcaption><p></p>
 </figure>
 </div>
 </div>
 </div>
-<p>As we study more loadings we still see the bands which correspond to fat, water or protein, but the correlation with the reference values is less, but this is normal due that the highest was taken away by the first principal component and we are extracting from the remaining new variability that we want to interpret.</p>
+<p>As we study more loadings we still see the bands which correspond to fat, water or protein, but the correlation with the reference values is less, but this is normal due that the highest extraction was taken by the first principal component and we are extracting from the remaining new variability that we want to interpret.</p>
 <p>As we see, there is certain correlation between the PC loadings and the parameters, so we can develop a regression called “principal components regression” to predict the values of new samples. So this is something we can do in coming posts.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="fu" style="color: #4758AB;">save.image</span>(<span class="st" style="color: #20794D;">"C:/BLOG/Workspaces/NIT Tutorial/NIT_ws8.RData"</span>)</span></code></pre></div>
+</div>
 
 
 </section>
@@ -285,7 +1020,7 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-SNVDT2_1der" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-SNVDT2_1der-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 1: SNVDT2 and First derivative compared</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;1: SNVDT2 and First derivative compared</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -301,7 +1036,7 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-SNVDT2_SNVDT21der" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-SNVDT2_SNVDT21der-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 2: SNVDT2 and SNVDT2 + First Derivative compared</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;2: SNVDT2 and SNVDT2 + First Derivative compared</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -330,7 +1065,7 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-SNVDT2_2der" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-SNVDT2_2der-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 3: SNVDT2 and Second derivative compared</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;3: SNVDT2 and Second derivative compared</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -346,7 +1081,7 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-SNVDT2_SNVDT22der" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-SNVDT2_SNVDT22der-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 4: SNVDT2 and SNVDT2 + Second Derivative compared</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;4: SNVDT2 and SNVDT2 + Second Derivative compared</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -375,7 +1110,7 @@ Cumulative Proportion  0.9996200000 9.997600e-01</code></pre>
 <div id="fig-correlations1_prot" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_7/NIT_tutorial_7_files/figure-html/fig-correlations1_prot-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 5: SNVDT2 and SNVDT2 + Second Derivative compared</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;5: SNVDT2 and SNVDT2 + Second Derivative compared</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -422,7 +1157,7 @@ Let´s do it with ggplot2
 <div class="cell-output-display">
 <div>
 <p>
-</p><pre class="mermaid" data-tooltip-selector="#mermaid-tooltip-1">flowchart LR
+</p><pre class="mermaid mermaid-js" data-tooltip-selector="#mermaid-tooltip-1">flowchart LR
   A[Raw Spectra] --&gt; B(SNV)
   A --&gt; C(Detrend only)
   A --&gt; D[SNV &amp; linear Detrend]
@@ -529,7 +1264,7 @@ Let´s do it with ggplot2
 <div id="fig-Raw_DTonly" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_6/NIR_tutotial_6_files/figure-html/fig-Raw_DTonly-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 1: Raw vs.&nbsp;Detrend only spectra</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;1: Raw vs.&nbsp;Detrend only spectra</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -554,7 +1289,7 @@ Let´s do it with ggplot2
 <div id="fig-Raw_SNVDT1" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_6/NIR_tutotial_6_files/figure-html/fig-Raw_SNVDT1-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 2: Raw vs.&nbsp;SNV+DT1</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;2: Raw vs.&nbsp;SNV+DT1</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -578,7 +1313,7 @@ Let´s do it with ggplot2
 <div id="fig-Raw_SNVDT2" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_6/NIR_tutotial_6_files/figure-html/fig-Raw_SNVDT2-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 3: Raw vs.&nbsp;SNV+DT1 and SNV+DT2</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;3: Raw vs.&nbsp;SNV+DT1 and SNV+DT2</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -609,7 +1344,7 @@ Let´s do it with ggplot2
 <div id="fig-Proteincor_dts" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_6/NIR_tutotial_6_files/figure-html/fig-Proteincor_dts-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 4: Wavelength correlation with protein for the different Detrend treatments</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;4: Wavelength correlation with protein for the different Detrend treatments</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -680,7 +1415,7 @@ Let´s do it with ggplot2
 <div id="fig-snv_vs_msc" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_5/NIT_tutorial_5_files/figure-html/fig-snv_vs_msc-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 1: MSC vs.&nbsp;SNV</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;1: MSC vs.&nbsp;SNV</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -723,7 +1458,7 @@ Let´s do it with ggplot2
 <div id="fig-MSC_train_test" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_5/NIT_tutorial_5_files/figure-html/fig-MSC_train_test-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 2: Training and Test sets math treated with MSC</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;2: Training and Test sets math treated with MSC</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -805,7 +1540,7 @@ Let´s do it with ggplot2
 <div id="fig-snv" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_4/NIT_tutorial_4_files/figure-html/fig-snv-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 1: Meat spectra treated with SNV.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;1: Meat spectra treated with SNV.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -837,7 +1572,7 @@ Let´s do it with ggplot2
 <div id="fig-cor_snv" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_4/NIT_tutorial_4_files/figure-html/fig-cor_snv-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 2: Correlation SNV signal with the parametes.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;2: Correlation SNV signal with the parametes.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -902,7 +1637,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <div id="fig-cor_params" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_3/NIT_tutorial_3_files/figure-html/fig-cor_params-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 1: Inter-correlation between parameters.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;1: Inter-correlation between parameters.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -914,7 +1649,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <div id="fig-params_cor" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_3/NIT_tutorial_3_files/figure-html/fig-params_cor-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 2: Parameters inter-correlation</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;2: Parameters inter-correlation</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -930,7 +1665,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <div id="fig-spec_collinearity" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_3/NIT_tutorial_3_files/figure-html/fig-spec_collinearity-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 3: Spectra collinearity.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;3: Spectra collinearity.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -957,7 +1692,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <div id="fig-cor_wavel_params" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_3/NIT_tutorial_3_files/figure-html/fig-cor_wavel_params-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 4: Correlation absorbance vs.&nbsp;parameters.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;4: Correlation absorbance vs.&nbsp;parameters.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -1030,7 +1765,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <div id="fig-gghist_prot" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_2/NIT_tutorial_2_files/figure-html/fig-gghist_prot-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 1: Protein histogram.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;1: Protein histogram.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -1053,7 +1788,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <div id="fig-gghist_all" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_2/NIT_tutorial_2_files/figure-html/fig-gghist_all-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 2: Parameters histograms.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;2: Parameters histograms.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -1080,7 +1815,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <div id="fig-ggraw_spec" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_2/NIT_tutorial_2_files/figure-html/fig-ggraw_spec-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 3: Raw spectra with ggplot.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;3: Raw spectra with ggplot.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -1133,7 +1868,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <div id="fig-rawspec" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_1/NIT_tutorial_1_files/figure-html/fig-rawspec-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 1: Raw spectra.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;1: Raw spectra.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -1161,7 +1896,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <div id="fig-histMoi" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_1/NIT_tutorial_1_files/figure-html/fig-histMoi-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 2: Moisture histogram.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;2: Moisture histogram.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -1173,7 +1908,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <div id="fig-histFat" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_1/NIT_tutorial_1_files/figure-html/fig-histFat-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 3: Fat histogram.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;3: Fat histogram.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -1185,7 +1920,7 @@ Protein   0.8145212 -0.8608965  1.0000000</code></pre>
 <div id="fig-histProt" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="https://quartopub.com/sites/jrcuesta/nir-chemometrics/posts/NIT_tutorial_1/NIT_tutorial_1_files/figure-html/fig-histProt-1.png" class="img-fluid figure-img" width="672"></p>
-<p></p><figcaption class="figure-caption">Figure 4: Protein histogram.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;4: Protein histogram.</figcaption><p></p>
 </figure>
 </div>
 </div>

@@ -1,0 +1,120 @@
+---
+title: "PCA - NIT tutorial (part 9)"
+author: "José Ramón Cuesta"
+description: "Continue exploring the Principal Component Analysis"
+image: spectra_moisture.jpeg
+date: "2022-11-02"
+categories: [R, NIT Tutorial, PCA]
+---
+
+As always, we load first our work space to continue from the previous post
+
+```{r}
+#| warning: false
+#| message: false
+load("C:/BLOG/Workspaces/NIT Tutorial/NIT_ws8.RData")
+```
+
+Now we load the libraries we are going to use:
+
+```{r}
+library(RColorBrewer)
+```
+
+We continue exploring the Principal Component Analysis, trying to understand as best as possible our data set. One of the arguments we get from the "prcomp" calculation is the **x** matrix, ans with this matrix we can have a look to the map of scores for the first three PCs.
+
+```{r}
+pairs(tecator_pc$x[ , 1:3])
+
+```
+
+## Checking the scores maps
+
+We can order the samples by their parameter content and assigning a color scale check the distribution of the samples in the scores map, in this case the distribution of fat , moisture and protein:
+
+```{r}
+#| label: fig-scores12_fat
+#| fig-cap: Distributions of scores on PC1 and PC2 vs. their fat content
+#| warning: false
+#| echo: false
+row.names(tecator_pc$x) <-  row.names(tecator)
+cols_fat <-  brewer.pal(3, "Reds")
+pal_fat <- colorRampPalette(cols_fat)
+order_fat <- findInterval(tecator$Fat, sort(tecator$Fat))
+plot(tecator_pc$x[ , 1], tecator_pc$x[ , 2] , col = pal_fat(nrow(tecator_pc$x))[order_fat], pch = 16, xlab = "PC1", ylab = "PC2", main = "Fat scores")
+legend("bottomright", col = pal_fat(2), pch = 19, 
+       legend = c("low fat content", "high fat content"))
+```
+
+```{r}
+#| label: fig-scores12_moisture
+#| fig-cap: Distributions of scores on PC1 and PC2 vs. their moisture content
+#| warning: false
+#| echo: false
+cols_moi <-  brewer.pal(3, "Blues")
+pal_moi <- colorRampPalette(cols_moi)
+order_moisture <- findInterval(tecator$Moisture, sort(tecator$Moisture))
+plot(tecator_pc$x[ , 1], tecator_pc$x[ , 2] , col = pal_moi(nrow(tecator_pc$x))[order_moisture], type = "p", pch = 16, xlab = "PC1", ylab = "PC2", main = "Moisture scores")
+legend("bottomright", col = pal_moi(2), pch = 16, legend = c("low moisture content", "high moisture content"))
+```
+
+```{r}
+#| label: fig-scores12_protein
+#| fig-cap: Distributions of scores on PC1 and PC2 vs. their protein content
+#| warning: false
+#| echo: false
+cols_prot <-  brewer.pal(3, "Greens")
+pal_prot <- colorRampPalette(cols_prot)
+order_protein <- findInterval(tecator$Protein, sort(tecator$Protein))
+plot(tecator_pc$x[ , 1], tecator_pc$x[ , 2] , col = pal_prot(nrow(tecator_pc$x))[order_protein], pch = 16,  xlab = "PC1", ylab = "PC2", main = "Protein scores")
+legend("bottomright", col = pal_prot(2), pch = 16, legend = c("low protein content", "high protein content"))
+```
+
+Once again with these plots we see how the parameter fat has a negative correlation with the moisture and protein parameters.
+
+## Checking the spectra wavelengths
+
+Another option is to check if, with these color palettes, we can see the wavelengths or wavelengths areas which are more important for every parameter.
+
+```{r}
+#| label: fig-snvdt2_fat
+#| fig-cap: Relationship between the spectra bands and fat
+#| warning: false
+#| echo: false
+matplot(colnames(tecator$sndt2_spec), t(tecator$sndt2_spec), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "SNVDT2 Fat content", col = pal_fat(nrow(tecator_pc$x))[order_fat])
+legend("topright", col = pal_fat(2), pch = 19, 
+       legend = c("low fat content", "high fat content"))
+
+abline(v = 930)
+```
+
+
+```{r}
+#| label: fig-snvdt2_moi
+#| fig-cap: Relationship between the spectra bands and moisture
+#| warning: false
+#| echo: false
+matplot(colnames(tecator$sndt2_spec), t(tecator$sndt2_spec), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "SNVDT2 Moisture content", col = pal_moi(nrow(tecator_pc$x))[order_moisture])
+legend("topright", col = pal_moi(2), pch = 19, 
+       legend = c("low fat content", "high fat content"))
+```
+
+
+```{r}
+#| label: fig-snvdt2_prot
+#| fig-cap: Relationship between the spectra bands and protein
+#| warning: false
+#| echo: false
+matplot(colnames(tecator$sndt2_spec), t(tecator$sndt2_spec), type = "l", xlab = "wavelengths (nm)", ylab = "Absorbance", main = "SNVDT2 Protein content", col = pal_prot(nrow(tecator_pc$x))[order_protein])
+legend("topright", col = pal_prot(2), pch = 19, 
+       legend = c("low fat content", "high fat content"))
+```
+
+In @fig-snvdt2_fat we can see the positive correlation between the 930 nm band and the fat content. 
+In @fig-snvdt2_moi all the area between 950 and 1000nm seems to be correlated with moisture. 
+Finally in the @fig-snvdt2_prot we can see certain areas where there is a positive correlation, but we will try to see it better with other math treatments.
+
+```{r}
+save.image("C:/BLOG/Workspaces/NIT Tutorial/NIT_ws9.RData")
+```
+
